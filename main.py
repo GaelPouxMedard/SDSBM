@@ -98,9 +98,9 @@ def splitDS(obs, folds):
     obs_train, obs_validation, obs_test = np.array(obs_train, dtype=object), np.array(obs_validation, dtype=object), np.array(obs_test, dtype=object)
     return obs_train, obs_validation, obs_test
 
-def initVar(I,K,O,indt_to_time):
+def initVar(I,K,O,Nepochs):
     thetaPrev = []
-    for indt in indt_to_time:
+    for indt in range(Nepochs):
         thetaPrev.append([])
         thetaPrev[indt] = np.random.random((I, K))
         thetaPrev[indt] /= thetaPrev[indt].sum(-1)[:, None]
@@ -109,11 +109,11 @@ def initVar(I,K,O,indt_to_time):
     pPrev /= pPrev.sum(-1)[:, None]
     return thetaPrev, pPrev
 
-def log_prior(alpha_tr, thetaPrev, indt_to_time, beta):
+def log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs):
     vecPrior = []
     limNodes = 2
 
-    listIndtToTime = np.array([indt_to_time[t] for t in indt_to_time])
+    listIndtToTime = np.array([indt_to_time[t] for t in range(Nepochs)])
     for indt in range(len(thetaPrev)):
         alphak, div = 0., 0.
 
@@ -135,22 +135,22 @@ def log_prior(alpha_tr, thetaPrev, indt_to_time, beta):
 
     return np.array(vecPrior)
 
-def likelihood(alpha_tr, theta, p, indt_to_time, beta):
+def likelihood(alpha_tr, theta, p, indt_to_time, beta, Nepochs):
     nnz = (alpha_tr>0).astype(bool)
     L = np.sum(np.log(alpha_tr[nnz] * (theta.dot(p))[nnz] + 1e-20))
     value_prior = 0
 
     if beta != 0:
-        priors = log_prior(alpha_tr, theta, indt_to_time, beta)
+        priors = log_prior(alpha_tr, theta, indt_to_time, beta, Nepochs)
         value_prior = gammaln(np.sum(priors)) - np.sum(gammaln(priors)) + np.sum(priors*np.log(theta+1e-20))
 
     return L, L+value_prior
 
-def maximizationTheta(obs, thetaPrev, p, indt_to_time, K, beta, alpha_tr):
+def maximizationTheta(obs, thetaPrev, p, indt_to_time, K, beta, alpha_tr, Nepochs):
     alphadivided = alpha_tr/(thetaPrev.dot(p)+1e-20)
     theta = alphadivided.dot(p.T)*thetaPrev
 
-    vecPrior = log_prior(alpha_tr, thetaPrev, indt_to_time, beta)
+    vecPrior = log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs)
 
     theta += vecPrior
 
@@ -194,23 +194,25 @@ def evaluate(obs_test, theta, p, print_res=False):
 def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-2, 3), res_beta=20, printProg=False, p_true=None, use_p_true=True, set_beta_null=False):
     fitted_params = []
 
-    setO, setI = set(), set()
+    setO, setI, setEpochs = set(), set(), set()
     for fold in range(len(obs_train)):
         setI |= set(obs_train[fold][:, 0])
         setO |= set(obs_train[fold][:, 1])
+        setEpochs |= set(obs_train[fold][:, 2])
     I = len(setI)
     O = len(setO)
+    Nepochs = len(setEpochs)
 
     beta_validation = np.append([0], np.logspace(log_beta_bb[0], log_beta_bb[1], res_beta))
     if set_beta_null:
         beta_validation = [0]
 
     for fold in range(len(obs_train)):
-        alpha_tr = np.zeros((len(indt_to_time),I,O))
+        alpha_tr = np.zeros((Nepochs,I,O))
         for (i,o,indt) in obs_train[fold]:
             alpha_tr[indt,i,o] += 1
 
-        theta_init, p_init = initVar(I,K,O,indt_to_time)
+        theta_init, p_init = initVar(I,K,O,Nepochs)
         theta_fin, p_fin, beta_fin, bestMetric = None, None, 0., -1e20
 
         tabRes, tabBeta = [], []
@@ -220,7 +222,7 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
             theta = thetaPrev
             p = pPrev
             for iter_em in range(nbLoops):
-                theta = maximizationTheta(obs_train[fold], thetaPrev, pPrev, indt_to_time, K, beta, alpha_tr)
+                theta = maximizationTheta(obs_train[fold], thetaPrev, pPrev, indt_to_time, K, beta, alpha_tr, Nepochs)
 
                 if use_p_true:
                     assert p_true is not None
@@ -228,7 +230,7 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
                 else:
                     p = maximizationP(obs_train[fold], thetaPrev, pPrev, K, alpha_tr)
 
-                #L, L_prior = likelihood(alpha_tr, theta, p, indt_to_time, beta)
+                #L, L_prior = likelihood(alpha_tr, theta, p, indt_to_time, beta, Nepochs)
                 #if L==Lprev: break
                 #print(f"{iter_em}/{nbLoops}", L, L_prior)
                 #Lprev = L
