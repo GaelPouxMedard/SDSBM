@@ -194,14 +194,19 @@ def evaluate(obs_test, theta, p, print_res=False):
 def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-2, 3), res_beta=20, printProg=False, p_true=None, use_p_true=True, set_beta_null=False):
     fitted_params = []
 
-    setO, setI, setEpochs = set(), set(), set()
+    I = 0
+    O = 0
+    Nepochs = 0
     for fold in range(len(obs_train)):
-        setI |= set(obs_train[fold][:, 0])
-        setO |= set(obs_train[fold][:, 1])
-        setEpochs |= set(obs_train[fold][:, 2])
-    I = len(setI)
-    O = len(setO)
-    Nepochs = len(setEpochs)
+        if np.max(obs_train[fold][:, 0]) > I:
+            I = np.max(obs_train[fold][:, 0])
+        if np.max(obs_train[fold][:, 1]) > O:
+            O = np.max(obs_train[fold][:, 1])
+        if np.max(obs_train[fold][:, 2])>Nepochs:
+            Nepochs = np.max(obs_train[fold][:, 2])
+    I+=1
+    O+=1
+    Nepochs+=1
 
     beta_validation = np.append([0], np.logspace(log_beta_bb[0], log_beta_bb[1], res_beta))
     if set_beta_null:
