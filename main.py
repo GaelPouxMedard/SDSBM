@@ -340,9 +340,14 @@ def XP3(folder = "XP/Synth/VarP/"):
                 saveParams(folder, codeSave+"beta_null_", fitted_params)
 
 
-XP1()
-XP2()
-XP3()
+XP = int(input("Which XP > "))
+
+if XP==1:
+    XP1()
+if XP==2:
+    XP2()
+if XP==3:
+    XP3()
 
 
 # x,y = [], []
