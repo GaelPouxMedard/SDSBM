@@ -272,7 +272,7 @@ def XP1(folder = "XP/Synth/NobsperI/"):
     res_beta = 40
 
     for typeVar in ["sin", "rnd"]:
-        for NobsperI in np.linspace(Nepochs, Nepochs*100, 11):
+        for NobsperI in np.linspace(Nepochs, Nepochs*100, 21):
             NobsperI = int(NobsperI)
             codeSave = f"{typeVar}_Nobs={NobsperI}_"
             print(codeSave)
@@ -298,7 +298,7 @@ def XP2(folder = "XP/Synth/Nepochs/"):
     res_beta = 40
 
     for typeVar in ["sin", "rnd"]:
-        for Nepochs in np.linspace(2, NobsperI, 11):
+        for Nepochs in np.linspace(2, NobsperI/2, 21):
             Nepochs = int(Nepochs)
             codeSave = f"{typeVar}_Nepochs={Nepochs}_"
             print(codeSave)
@@ -317,7 +317,7 @@ def XP3(folder = "XP/Synth/VarP/"):
     K = 3
     O = 3
 
-    NobsperI = 10000
+    NobsperI = 1000
     Nepochs = 100
     Tmax = 2*np.pi
     nbLoops = 1000
