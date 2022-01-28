@@ -11,7 +11,7 @@ import os
 
 np.random.seed(111)
 
-def getData(I,O,K,Nepochs, Nobs,Tmax, typeVar="sin", shiftp=0.05):
+def getData(I,O,K,Nepochs, NobsperI,Tmax, typeVar="sin", shiftp=0.05):
     p = np.random.random((K, O))
     p /= p.sum(-1)[:, None]
 
@@ -37,19 +37,19 @@ def getData(I,O,K,Nepochs, Nobs,Tmax, typeVar="sin", shiftp=0.05):
     theta = ftetnorm(clock)
 
     epoch = 0
-    for nobs in range(Nobs):
+    for nobs in range(NobsperI):
         if clock >= epoch - 1e-10:
             indt += 1
             indt_to_time[indt] = clock
             theta_t.append(copy(theta))
             epoch += Tmax/Nepochs
 
-        i = np.random.randint(0, I)
-        prob = theta[i].dot(p)
-        o = np.random.choice(list(range(O)), p=prob)
-        obs.append((i,o,indt))
+        for i in range(I):
+            prob = theta[i].dot(p)
+            o = np.random.choice(list(range(O)), p=prob)
+            obs.append((i,o,indt))
 
-        clock = Tmax*(nobs+1)/Nobs
+        clock = Tmax*(nobs+1)/NobsperI
         theta = ftetnorm(clock)
 
     theta_t = np.array(theta_t)
@@ -259,8 +259,8 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
     return fitted_params
 
 
-# Varying Nobs
-def XP1(folder = "XP/Synth/Nobs/"):
+# Varying NobsperI
+def XP1(folder = "XP/Synth/NobsperI/"):
     I = 100
     K = 3
     O = 3
@@ -272,11 +272,11 @@ def XP1(folder = "XP/Synth/Nobs/"):
     res_beta = 40
 
     for typeVar in ["sin", "rnd"]:
-        for Nobs in np.linspace(Nepochs, Nepochs*100, 11):
-            Nobs = int(Nobs)
-            codeSave = f"{typeVar}_Nobs={Nobs}_"
+        for NobsperI in np.linspace(Nepochs, Nepochs*100, 11):
+            NobsperI = int(NobsperI)
+            codeSave = f"{typeVar}_Nobs={NobsperI}_"
             print(codeSave)
-            obs, theta_true, p_true, indt_to_time = getData(I,O,K,Nepochs, Nobs, Tmax, typeVar=typeVar)
+            obs, theta_true, p_true, indt_to_time = getData(I,O,K,Nepochs, NobsperI, Tmax, typeVar=typeVar)
             obs_train, obs_validation, obs_test = splitDS(obs, folds)
             saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
 
@@ -291,18 +291,18 @@ def XP2(folder = "XP/Synth/Nepochs/"):
     K = 3
     O = 3
 
-    Nobs = 10000
+    NobsperI = 10000
     Tmax = 2*np.pi
     nbLoops = 1000
     folds = 5
     res_beta = 40
 
     for typeVar in ["sin", "rnd"]:
-        for Nepochs in np.linspace(2, Nobs, 11):
+        for Nepochs in np.linspace(2, NobsperI, 11):
             Nepochs = int(Nepochs)
             codeSave = f"{typeVar}_Nepochs={Nepochs}_"
             print(codeSave)
-            obs, theta_true, p_true, indt_to_time = getData(I,O,K,Nepochs, Nobs, Tmax, typeVar=typeVar)
+            obs, theta_true, p_true, indt_to_time = getData(I,O,K,Nepochs, NobsperI, Tmax, typeVar=typeVar)
             obs_train, obs_validation, obs_test = splitDS(obs, folds)
             saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
 
@@ -317,7 +317,7 @@ def XP3(folder = "XP/Synth/VarP/"):
     K = 3
     O = 3
 
-    Nobs = 10000
+    NobsperI = 10000
     Nepochs = 100
     Tmax = 2*np.pi
     nbLoops = 1000
@@ -326,10 +326,10 @@ def XP3(folder = "XP/Synth/VarP/"):
 
     for typeVar in ["sin", "rnd"]:
         for shiftp in np.linspace(0, 0.5, 21):
-            obs, theta_true, p_true, indt_to_time = getData(I,O,K,Nepochs, Nobs, Tmax, typeVar=typeVar, shiftp=shiftp)
+            obs, theta_true, p_true, indt_to_time = getData(I,O,K,Nepochs, NobsperI, Tmax, typeVar=typeVar, shiftp=shiftp)
             obs_train, obs_validation, obs_test = splitDS(obs, folds)
             for infer_p in [True, False]:
-                codeSave = f"{typeVar}_shiftp={Nobs}_inferp={infer_p}_"
+                codeSave = f"{typeVar}_shiftp={shiftp}_inferp={infer_p}_"
                 print(codeSave)
 
                 saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
