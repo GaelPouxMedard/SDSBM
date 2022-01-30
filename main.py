@@ -291,14 +291,14 @@ def XP2(folder = "XP/Synth/Nepochs/"):
     K = 3
     O = 3
 
-    NobsperI = 10000
+    NobsperI = 1000
     Tmax = 2*np.pi
     nbLoops = 1000
     folds = 5
     res_beta = 40
 
     for typeVar in ["sin", "rnd"]:
-        for Nepochs in np.linspace(2, NobsperI/2, 21):
+        for Nepochs in np.linspace(2, NobsperI, 21):
             Nepochs = int(Nepochs)
             codeSave = f"{typeVar}_Nepochs={Nepochs}_"
             print(codeSave)
