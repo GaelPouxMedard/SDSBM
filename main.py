@@ -191,7 +191,7 @@ def evaluate(obs_test, theta, p, print_res=False):
 
     return [roc, ap, F1]
 
-def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-2, 3), res_beta=20, printProg=False, p_true=None, use_p_true=True, set_beta_null=False):
+def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-2, 3), res_beta=20, printProg=False, p_true=None, use_p_true=True, set_beta_null=False, one_epoch=False):
     fitted_params = []
 
     I = 0
@@ -209,7 +209,16 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
     Nepochs+=1
 
     beta_validation = np.append([0], np.logspace(log_beta_bb[0], log_beta_bb[1], res_beta))
-    if set_beta_null:
+
+    if one_epoch:
+        Nepochs = 1
+        for fold in range(len(obs_train)):
+            for i, (item,o,indt) in enumerate(obs_train[fold]):
+                obs_train[fold][i] = (item,o,0)
+            for i, (item,o,indt) in enumerate(obs_validation[fold]):
+                obs_validation[fold][i] = (item,o,0)
+
+    if set_beta_null or one_epoch:
         beta_validation = [0]
 
     for fold in range(len(obs_train)):
@@ -258,7 +267,6 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
 
     return fitted_params
 
-
 # Varying NobsperI
 def XP1(folder = "XP/Synth/NobsperI/"):
     I = 100
@@ -284,6 +292,8 @@ def XP1(folder = "XP/Synth/NobsperI/"):
             saveParams(folder, codeSave, fitted_params)
             fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, p_true=p_true, printProg=False)
             saveParams(folder, codeSave+"beta_null_", fitted_params)
+            fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, p_true=p_true, printProg=False)
+            saveParams(folder, codeSave+"one_epoch_", fitted_params)
 
 # Varying Nepochs
 def XP2(folder = "XP/Synth/Nepochs/"):
@@ -310,6 +320,8 @@ def XP2(folder = "XP/Synth/Nepochs/"):
             saveParams(folder, codeSave, fitted_params)
             fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, p_true=p_true, printProg=False)
             saveParams(folder, codeSave+"beta_null_", fitted_params)
+            fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, p_true=p_true, printProg=False)
+            saveParams(folder, codeSave+"one_epoch_", fitted_params)
 
 # Varying p
 def XP3(folder = "XP/Synth/VarP/"):
@@ -338,6 +350,8 @@ def XP3(folder = "XP/Synth/VarP/"):
                 saveParams(folder, codeSave, fitted_params)
                 fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=infer_p, p_true=p_true, printProg=False)
                 saveParams(folder, codeSave+"beta_null_", fitted_params)
+                fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=infer_p, p_true=p_true, printProg=False)
+                saveParams(folder, codeSave+"one_epoch_", fitted_params)
 
 
 XP = int(input("Which XP > "))
