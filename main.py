@@ -25,7 +25,6 @@ def getData(I,O,K,Nepochs, NobsperI,Tmax, typeVar="sin", shiftp=0.05):
     indt_to_time = {}
     theta_t = []
 
-    typeVar = "sin"
     if typeVar=="sin":
         rnd_num = np.random.random((I, K))
         ftet = lambda x: np.array([[np.cos(rnd_num[i,k]+x+np.pi*k/K)**2 for k in range(K)] for i in range(I)])
