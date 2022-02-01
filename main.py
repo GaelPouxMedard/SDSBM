@@ -81,6 +81,10 @@ def saveParams(folder, codeSave, fitted_params):
         np.save(folder+codeSave+f"f{fold}_p.npy", p_fin)
         np.save(folder+codeSave+f"f{fold}_beta.npy", beta_fin)
 
+def saveTrueParams(folder, codeSave, theta, p):
+    np.save(folder+codeSave+f"theta_true.npy", theta)
+    np.save(folder+codeSave+f"p_true.npy", p)
+
 def splitDS(obs, folds):
     allInds = list(range(len(obs)))
     np.random.shuffle(allInds)
@@ -287,6 +291,7 @@ def XP1(folder = "XP/Synth/NobsperI/"):
             obs, theta_true, p_true, indt_to_time = getData(I,O,K,Nepochs, NobsperI, Tmax, typeVar=typeVar)
             obs_train, obs_validation, obs_test = splitDS(obs, folds)
             saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
+            saveTrueParams(folder, codeSave, theta_true, p_true)
 
             fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, p_true=p_true, printProg=False)
             saveParams(folder, codeSave, fitted_params)
@@ -315,6 +320,7 @@ def XP2(folder = "XP/Synth/Nepochs/"):
             obs, theta_true, p_true, indt_to_time = getData(I,O,K,Nepochs, NobsperI, Tmax, typeVar=typeVar)
             obs_train, obs_validation, obs_test = splitDS(obs, folds)
             saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
+            saveTrueParams(folder, codeSave, theta_true, p_true)
 
             fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, p_true=p_true, printProg=False)
             saveParams(folder, codeSave, fitted_params)
@@ -345,6 +351,7 @@ def XP3(folder = "XP/Synth/VarP/"):
                 print(codeSave)
 
                 saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
+                saveTrueParams(folder, codeSave, theta_true, p_true)
 
                 fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, use_p_true=infer_p, p_true=p_true, printProg=False)
                 saveParams(folder, codeSave, fitted_params)
