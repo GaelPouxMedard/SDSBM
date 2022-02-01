@@ -16,6 +16,12 @@ def getData(folder, codeSave):
 
     return obs_train, obs_validation, obs_test, indt_to_time
 
+def getTrueParams(folder, codeSave):
+    theta = np.load(folder+codeSave+f"theta_true.npy")
+    p = np.load(folder+codeSave+f"p_true.npy")
+
+    return theta, p
+
 def getParams(folder, codeSave, folds):
     fitted_params = []
     for fold in range(folds):
@@ -27,7 +33,7 @@ def getParams(folder, codeSave, folds):
     return fitted_params
 
 
-def evaluate(obs_test, fitted_params, print_res=False, one_epoch=False):
+def evaluate(obs_test, fitted_params, theta_true, p_true, print_res=False, one_epoch=False):
     tabRes = []
     labs = []
 
@@ -55,8 +61,12 @@ def evaluate(obs_test, fitted_params, print_res=False, one_epoch=False):
         F1 = f1_score(true, (np.array(pred)>0.5).astype(int), average="micro")
         ap = average_precision_score(true, pred, average="micro")
 
-        labs = ["roc", "F1", "ap"]
-        tabRes.append([roc, F1, ap])
+        diffTet = np.abs(theta-theta_true)
+        mae = np.mean(diffTet)
+        rmse = np.mean(diffTet**2)**0.5
+
+        labs = ["roc", "F1", "ap", "mae", "rmse"]
+        tabRes.append([roc, F1, ap, mae, rmse])
 
         if fold==0:
             for i in range(9):
@@ -87,19 +97,21 @@ def XP1(folder = "XP/Synth/NobsperI/"):
     folds = 5
     res_beta = 40
 
-    for typeVar in ["sin", "rnd"]:
-        for NobsperI in np.linspace(Nepochs, Nepochs*100, 21):
+    for typeVar in ["rnd", "sin"]:
+        #for NobsperI in np.linspace(Nepochs, Nepochs*100, 21):  # =========================
+        for NobsperI in np.linspace(Nepochs, Nepochs*10, 5):
             NobsperI = int(NobsperI)
             codeSave = f"{typeVar}_Nobs={NobsperI}_"
             print(codeSave)
             obs_train, obs_validation, obs_test, indt_to_time = getData(folder, codeSave)
+            theta_true, p_true = getTrueParams(folder, codeSave)
 
             fitted_params = getParams(folder, codeSave, folds)
             fitted_params_beta_null = getParams(folder, codeSave+"beta_null_", folds)
             fitted_params_one_epoch = getParams(folder, codeSave+"one_epoch_", folds)
 
-            tabRes = evaluate(obs_test, fitted_params, print_res=True)
-            tabRes = evaluate(obs_test, fitted_params_beta_null, print_res=True)
-            tabRes = evaluate(obs_test, fitted_params_one_epoch, print_res=True, one_epoch=True)
+            tabRes = evaluate(obs_test, fitted_params, theta_true, p_true, print_res=True)
+            tabRes = evaluate(obs_test, fitted_params_beta_null, theta_true, p_true, print_res=True)
+            tabRes = evaluate(obs_test, fitted_params_one_epoch, theta_true, p_true, print_res=True, one_epoch=True)
 
 XP1()

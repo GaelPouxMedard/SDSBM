@@ -25,13 +25,16 @@ def getData(I,O,K,Nepochs, NobsperI,Tmax, typeVar="sin", shiftp=0.05):
     indt_to_time = {}
     theta_t = []
 
+    typeVar = "sin"
     if typeVar=="sin":
-        ftet = lambda x: np.array([[np.cos(x+np.pi*k/K)**2 for k in range(K)] for _ in range(I)])
+        rnd_num = np.random.random((I, K))
+        ftet = lambda x: np.array([[np.cos(rnd_num[i,k]+x+np.pi*k/K)**2 for k in range(K)] for i in range(I)])
 
     elif typeVar=="rnd":
-        rnd_num = np.random.random((K))
-        rnd_slope = ((np.random.random((K))<0.5).astype(int)-0.5)*0.5
-        ftet = lambda x: np.array([rnd_num if x<Tmax/4 else np.abs(rnd_num+(x-Tmax/4)*rnd_slope) for _ in range(I)])
+        rnd_num = np.random.random((I, K))
+        rnd_slope = ((np.random.random((I,K))<0.5).astype(int)-0.5)*0.5
+        ftet = lambda x: np.array([rnd_num[i] if x<Tmax/4 else np.abs(rnd_num[i]+(x-Tmax/4)*rnd_slope[i]) for i in range(I)])
+
 
     ftetnorm = lambda x: ftet(x)/ftet(x).sum(-1)[:, None]
     theta = ftetnorm(clock)
@@ -55,6 +58,15 @@ def getData(I,O,K,Nepochs, NobsperI,Tmax, typeVar="sin", shiftp=0.05):
     theta_t = np.array(theta_t)
 
     obs = np.array(obs, dtype=object)
+
+
+
+
+    for i in range(9):
+        plt.subplot(3,3,i+1)
+        plt.plot(theta_t[:, i, :])
+    plt.show()
+    sys.exit()
 
     return obs, theta_t, p, indt_to_time
 
@@ -281,10 +293,12 @@ def XP1(folder = "XP/Synth/NobsperI/"):
     Tmax = 2*np.pi
     nbLoops = 1000
     folds = 5
-    res_beta = 40
+    #res_beta = 40 # =========================
+    res_beta = 10
 
-    for typeVar in ["sin", "rnd"]:
-        for NobsperI in np.linspace(Nepochs, Nepochs*100, 21):
+    for typeVar in ["rnd", "sin"]:
+        #for NobsperI in np.linspace(Nepochs, Nepochs*100, 21): # =========================
+        for NobsperI in np.linspace(Nepochs, Nepochs*10, 5):
             NobsperI = int(NobsperI)
             codeSave = f"{typeVar}_Nobs={NobsperI}_"
             print(codeSave)
