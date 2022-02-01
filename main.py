@@ -342,6 +342,7 @@ def XP3(folder = "XP/Synth/VarP/"):
             obs_train, obs_validation, obs_test = splitDS(obs, folds)
             for infer_p in [True, False]:
                 codeSave = f"{typeVar}_shiftp={round(shiftp, 4)}_inferp={infer_p}_"
+
                 print(codeSave)
 
                 saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
