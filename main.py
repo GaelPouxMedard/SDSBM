@@ -293,12 +293,12 @@ def XP1(folder = "XP/Synth/NobsperI/"):
     Tmax = 2*np.pi
     nbLoops = 1000
     folds = 5
-    #res_beta = 40 # =========================
-    res_beta = 10
+    res_beta = 40 # =========================
+    #res_beta = 10
 
     for typeVar in ["rnd", "sin"]:
-        #for NobsperI in np.linspace(Nepochs, Nepochs*100, 21): # =========================
-        for NobsperI in np.linspace(Nepochs, Nepochs*10, 5):
+        for NobsperI in np.linspace(Nepochs, Nepochs*100, 21): # =========================
+        #for NobsperI in np.linspace(Nepochs, Nepochs*10, 5):
             NobsperI = int(NobsperI)
             codeSave = f"{typeVar}_Nobs={NobsperI}_"
             print(codeSave)
