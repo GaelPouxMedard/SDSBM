@@ -62,11 +62,11 @@ def getData(I,O,K,Nepochs, NobsperI,Tmax, typeVar="sin", shiftp=0.05):
 
 
 
-    for i in range(9):
-        plt.subplot(3,3,i+1)
-        plt.plot(theta_t[:, i, :])
-    plt.show()
-    sys.exit()
+    # for i in range(9):
+    #     plt.subplot(3,3,i+1)
+    #     plt.plot(theta_t[:, i, :])
+    # plt.show()
+    # sys.exit()
 
     return obs, theta_t, p, indt_to_time
 
