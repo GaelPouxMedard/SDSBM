@@ -308,8 +308,8 @@ def XP2(folder = "XP/Synth/Nepochs/"):
     res_beta = 40
 
     for typeVar in ["sin", "rnd"]:
-        for Nepochs in np.linspace(2, NobsperI, 21):
-            Nepochs = int(Nepochs)
+        for Nepochs_div in reversed([1, 5, 10, 20, 30, 40, 50, 75, 100]):  # = Nobs moyen par epoque
+            Nepochs = int(NobsperI/Nepochs_div)
             codeSave = f"{typeVar}_Nepochs={Nepochs}_"
             print(codeSave)
             obs, theta_true, p_true, indt_to_time = getData(I,O,K,Nepochs, NobsperI, Tmax, typeVar=typeVar)
@@ -341,7 +341,7 @@ def XP3(folder = "XP/Synth/VarP/"):
             obs, theta_true, p_true, indt_to_time = getData(I,O,K,Nepochs, NobsperI, Tmax, typeVar=typeVar, shiftp=shiftp)
             obs_train, obs_validation, obs_test = splitDS(obs, folds)
             for infer_p in [True, False]:
-                codeSave = f"{typeVar}_shiftp={shiftp}_inferp={infer_p}_"
+                codeSave = f"{typeVar}_shiftp={round(shiftp, 4)}_inferp={infer_p}_"
                 print(codeSave)
 
                 saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
