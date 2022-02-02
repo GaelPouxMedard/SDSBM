@@ -68,10 +68,17 @@ def evaluate(obs_test, fitted_params, theta_true, p_true, print_res=False, one_e
         labs = ["roc", "F1", "ap", "mae", "rmse"]
         tabRes.append([roc, F1, ap, mae, rmse])
 
-        if fold==0:
+        if fold==0 and False:
             for i in range(9):
                 plt.subplot(3,3,i+1)
-                plt.plot("")
+                if not one_epoch:
+                    plt.plot(theta[:, i, :])
+                else:
+                    for k in range(theta.shape[-1]):
+                        plt.plot([0, len(theta_true)], [theta[0, i, k], theta[0, i, k]])
+
+                plt.plot(theta_true[:, i, :], "k")
+            plt.show()
 
     tabRes = np.array(tabRes)
     res_mean = np.mean(tabRes, axis=0)
@@ -80,7 +87,8 @@ def evaluate(obs_test, fitted_params, theta_true, p_true, print_res=False, one_e
 
     if print_res:
         # print("\t".join(map(str, labs)))
-        print("\t".join(map(str, res_mean)).expandtabs(30))
+        resstr = "\t".join([fr"{np.round(r, 4)} ± {np.round(e, 4)}" for r, e in zip(res_mean, res_std)])
+        print(resstr.expandtabs(20))
         # print("\t".join(map(str, res_std)))
         # print("\t".join(map(str, res_sem)))
 

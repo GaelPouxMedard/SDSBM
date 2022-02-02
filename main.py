@@ -290,14 +290,17 @@ def XP1(folder = "XP/Synth/NobsperI/"):
 
     Nepochs = 100
     Tmax = 2*np.pi
+
     nbLoops = 1000
+
     folds = 5
+
     res_beta = 40 # =========================
-    #res_beta = 10
+    res_beta = 10
 
     for typeVar in ["rnd", "sin"]:
-        for NobsperI in np.linspace(Nepochs, Nepochs*100, 21): # =========================
-        #for NobsperI in np.linspace(Nepochs, Nepochs*10, 5):
+        #for NobsperI in np.linspace(Nepochs, Nepochs*100, 21): # =========================
+        for NobsperI in np.linspace(Nepochs, Nepochs*10, 5):
             NobsperI = int(NobsperI)
             codeSave = f"{typeVar}_Nobs={NobsperI}_"
             print(codeSave)
@@ -306,7 +309,7 @@ def XP1(folder = "XP/Synth/NobsperI/"):
             saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
             saveTrueParams(folder, codeSave, theta_true, p_true)
 
-            fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, p_true=p_true, printProg=False)
+            fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, p_true=p_true, printProg=True)
             saveParams(folder, codeSave, fitted_params)
             fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, p_true=p_true, printProg=False)
             saveParams(folder, codeSave+"beta_null_", fitted_params)
