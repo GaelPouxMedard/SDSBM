@@ -41,8 +41,6 @@ for file in ["lastfm.csv", "wikipedia.csv", "reddit.csv", "mooc.csv"]:
                 pause()
             timeprec=time
 
-
-
     with open("XP/RW/Data/"+file.replace('.csv', '_indt_to_time.pkl'), "wb+") as f:
         pickle.dump(indt_to_time, f)
     with open("XP/RW/Data/"+file.replace('.csv', '_observations.pkl'), "wb+") as f:

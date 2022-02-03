@@ -9,6 +9,7 @@ from sklearn.metrics import roc_auc_score, average_precision_score, f1_score
 from scipy.special import gamma, gammaln
 import os
 import pprofile
+import time
 
 """
 import pprofile
@@ -180,7 +181,7 @@ def likelihood(alpha_tr, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch):
     return L, L+value_prior
 
 def maximizationTheta(obs, alphadivided, thetaPrev, p, indt_to_time, K, beta, alpha_tr, Nepochs, Nobs_epoch):
-    theta = alphadivided.dot(p.T)*thetaPrev
+    theta = np.tensordot(alphadivided, p.T, axes=1)*thetaPrev
 
     vecPrior = log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs, Nobs_epoch)
 
@@ -270,9 +271,16 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
             thetaPrev, pPrev = copy(theta_init), copy(p_init)
             theta = thetaPrev
             p = pPrev
+
+            Lprev = -1e20
             for iter_em in range(nbLoops):
 
-                if iter_em%1==0: print(f"{iter_em}/{nbLoops} - K={K}")
+                if iter_em%10==0:
+                    L, L_prior = likelihood(alpha_tr, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch)
+                    if (Lprev-L)/Lprev<0.01:
+                        break
+                    Lprev = L
+                    print(f"{iter_em}/{nbLoops} - K={K} - B={beta} - L={L}")
 
                 allProbs = np.tensordot(theta, p, axes=1)+1e-20
                 alphadivided = alpha_tr/allProbs
@@ -411,20 +419,25 @@ def XP4(folder="XP/RW/", ds="lastfm"):
 
     folds = 5
     codeSave = ds+"_"
-    nbLoops = 3000
-    res_beta = 40
+    nbLoops = 500
+    log_beta_bb=(0, 5)
+    if ds=="lastfm":  # Not the same time scale
+        log_beta_bb=(2, 8)
+    res_beta = 10
 
     obs, indt_to_time = getDataRW(folder, ds)
     obs_train, obs_validation, obs_test = splitDS(obs, folds)
     saveData(folder+f"{ds}/", codeSave, obs_train, obs_validation, obs_test, indt_to_time)
 
-    for K in [5, 10, 15, 20, 30]:
-        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, use_p_true=False, printProg=True)
+    for K in [5, 10, 20, 30]:
+        tic = time.time()
+        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=log_beta_bb, res_beta=res_beta, use_p_true=False, printProg=True)
         saveParams(folder+f"{ds}/", codeSave+f"{K}_", fitted_params)
         fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=False, printProg=False)
         saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"beta_null_", fitted_params)
         fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=False, printProg=False)
         saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"one_epoch_", fitted_params)
+        print(f"K={K} - {np.round((time.time()-tic)/(3600), 2)}h elapsed =====================================")
 
 
 XP = int(input("Which XP > "))
