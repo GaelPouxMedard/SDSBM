@@ -225,7 +225,7 @@ def evaluate(obs_test, theta, p, print_res=False):
 
     return [roc, ap, F1]
 
-def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-2, 3), res_beta=20, printProg=False, p_true=None, use_p_true=True, set_beta_null=False, one_epoch=False):
+def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-2, 3), res_beta=20, printProg=False, p_true=None, use_p_true=True, set_beta_null=False, one_epoch=False, rw=False):
     fitted_params = []
 
     I = 0
@@ -277,7 +277,7 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
 
                 if iter_em%10==0:
                     L, L_prior = likelihood(alpha_tr, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch)
-                    if (Lprev-L)/Lprev<0.01:
+                    if (Lprev-L)/Lprev<0.01 and rw:
                         print("BROKEN", (Lprev-L)/Lprev)
                         break
                     Lprev = L
@@ -432,11 +432,11 @@ def XP4(folder="XP/RW/", ds="lastfm"):
 
     for K in [5, 10, 20, 30]:
         tic = time.time()
-        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=log_beta_bb, res_beta=res_beta, use_p_true=False, printProg=True)
+        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=log_beta_bb, res_beta=res_beta, use_p_true=False, printProg=True, rw=True)
         saveParams(folder+f"{ds}/", codeSave+f"{K}_", fitted_params)
-        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=False, printProg=False)
+        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=False, printProg=False, rw=True)
         saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"beta_null_", fitted_params)
-        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=False, printProg=False)
+        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=False, printProg=False, rw=True)
         saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"one_epoch_", fitted_params)
         print(f"K={K} - {np.round((time.time()-tic)/(3600), 2)}h elapsed =====================================")
 
