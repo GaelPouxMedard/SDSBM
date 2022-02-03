@@ -273,14 +273,22 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
             p = pPrev
 
             Lprev = -1e20
+            nbTimesStable = 0
             for iter_em in range(nbLoops):
 
                 if iter_em%10==0:
                     L, L_prior = likelihood(alpha_tr, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch)
                     print(f"{iter_em}/{nbLoops} - K={K} - B={beta} - L={L}")
-                    if (Lprev-L)/Lprev<0.01 and rw:
-                        print("BROKEN", (Lprev-L)/Lprev)
-                        break
+                    if Lprev>L: print("================ PROBLEM", Lprev-L)
+                    absvar = np.abs((Lprev-L)/Lprev)
+                    if absvar<0.001 and rw:
+                        if nbTimesStable>=30:  # break the loop of small var 30 times in a row
+                            print("BROKEN", (Lprev-L)/Lprev)
+                            break
+                        else:
+                            nbTimesStable+=10
+                    else:
+                        nbTimesStable = 0
                     Lprev = L
 
                 allProbs = np.tensordot(theta, p, axes=1)+1e-20
