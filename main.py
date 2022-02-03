@@ -8,7 +8,17 @@ from scipy.stats import dirichlet
 from sklearn.metrics import roc_auc_score, average_precision_score, f1_score
 from scipy.special import gamma, gammaln
 import os
+import pprofile
 
+"""
+import pprofile
+profiler = pprofile.Profile()
+with profiler:
+    RhovsT(g, 0.1, 0.28999, 1, 1000)
+profiler.print_stats()
+profiler.dump_stats("Benchmark.txt")
+pause()
+"""
 
 def getData(I,O,K,Nepochs, NobsperI,Tmax, typeVar="sin", shiftp=0.05):
     p = np.random.random((K, O))
@@ -132,7 +142,7 @@ def initVar(I,K,O,Nepochs):
     pPrev /= pPrev.sum(-1)[:, None]
     return thetaPrev, pPrev
 
-def log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs):
+def log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs, Nobs_epoch):
     vecPrior = []
     limNodes = 2
 
@@ -141,13 +151,13 @@ def log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs):
         alphak, div = 0., 0.
 
         indsPrec = list(range(np.max((indt-limNodes, 0)), indt))
-        Nobsprev = alpha_tr[indsPrec].sum()
+        Nobsprev = Nobs_epoch[indsPrec, None, None]
         timeDiffs = (listIndtToTime[indt]-listIndtToTime[indsPrec])[:, None, None]
         alphak += (thetaPrev[indsPrec]*Nobsprev/timeDiffs).sum(0)
         div += (Nobsprev/timeDiffs).sum()
 
         indsSuiv = list(range(indt+1, np.min((indt+1+limNodes, len(thetaPrev)))))
-        Nobssuiv = alpha_tr[indsSuiv].sum()
+        Nobssuiv = Nobs_epoch[indsSuiv, None, None]
         timeDiffs = (listIndtToTime[indsSuiv]-listIndtToTime[indt])[:, None, None]
         alphak += (thetaPrev[indsSuiv]*Nobssuiv/timeDiffs).sum(0)
         div += (Nobssuiv/timeDiffs).sum()
@@ -158,33 +168,33 @@ def log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs):
 
     return np.array(vecPrior)
 
-def likelihood(alpha_tr, theta, p, indt_to_time, beta, Nepochs):
+def likelihood(alpha_tr, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch):
     nnz = (alpha_tr>0).astype(bool)
     L = np.sum(np.log(alpha_tr[nnz] * (theta.dot(p))[nnz] + 1e-20))
     value_prior = 0
 
     if beta != 0:
-        priors = log_prior(alpha_tr, theta, indt_to_time, beta, Nepochs)
+        priors = log_prior(alpha_tr, theta, indt_to_time, beta, Nepochs, Nobs_epoch)
         value_prior = gammaln(np.sum(priors)) - np.sum(gammaln(priors)) + np.sum(priors*np.log(theta+1e-20))
 
     return L, L+value_prior
 
-def maximizationTheta(obs, thetaPrev, p, indt_to_time, K, beta, alpha_tr, Nepochs):
-    alphadivided = alpha_tr/(thetaPrev.dot(p)+1e-20)
+def maximizationTheta(obs, alphadivided, thetaPrev, p, indt_to_time, K, beta, alpha_tr, Nepochs, Nobs_epoch):
     theta = alphadivided.dot(p.T)*thetaPrev
 
-    vecPrior = log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs)
+    vecPrior = log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs, Nobs_epoch)
 
     theta += vecPrior
 
-    phi = alpha_tr.sum(-1) + vecPrior.sum(-1)  # Should do -1, but already done in log_prior()
+    theta /= theta.sum(axis=-1)[:, :, None]+1e-20
 
-    theta /= phi[:, :, None] + 1e-20
+    # Equivalent but slower
+    # phi = alpha_tr.sum(-1) + vecPrior.sum(-1)
+    # theta /= phi[:, :, None] + 1e-20
 
     return theta
 
-def maximizationP(obs, theta, pPrev, K, alpha_tr):
-    alphadivided = alpha_tr/theta.dot(pPrev)
+def maximizationP(obs, alphadivided, theta, pPrev, K, alpha_tr, Nobs_epoch):
     p = np.tensordot(theta, alphadivided, axes=((0,1), (0,1)))
     p = p*pPrev
 
@@ -249,6 +259,8 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
         for (i,o,indt) in obs_train[fold]:
             alpha_tr[indt,i,o] += 1
 
+        Nobs_epoch = alpha_tr.sum(axis=(1,2))
+
         theta_init, p_init = initVar(I,K,O,Nepochs)
         theta_fin, p_fin, beta_fin, bestMetric = None, None, 0., -1e20
 
@@ -259,15 +271,21 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
             theta = thetaPrev
             p = pPrev
             for iter_em in range(nbLoops):
-                theta = maximizationTheta(obs_train[fold], thetaPrev, pPrev, indt_to_time, K, beta, alpha_tr, Nepochs)
+
+                if iter_em%1==0: print(f"{iter_em}/{nbLoops} - K={K}")
+
+                allProbs = np.tensordot(theta, p, axes=1)+1e-20
+                alphadivided = alpha_tr/allProbs
+
+                theta = maximizationTheta(obs_train[fold], alphadivided, thetaPrev, pPrev, indt_to_time, K, beta, alpha_tr, Nepochs, Nobs_epoch)
 
                 if use_p_true:
                     assert p_true is not None
                     p = copy(p_true)
                 else:
-                    p = maximizationP(obs_train[fold], thetaPrev, pPrev, K, alpha_tr)
+                    p = maximizationP(obs_train[fold], alphadivided, thetaPrev, pPrev, K, alpha_tr, Nobs_epoch)
 
-                #L, L_prior = likelihood(alpha_tr, theta, p, indt_to_time, beta, Nepochs)
+                #L, L_prior = likelihood(alpha_tr, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch)
                 #if L==Lprev: break
                 #print(f"{iter_em}/{nbLoops}", L, L_prior)
                 #Lprev = L
@@ -395,23 +413,22 @@ def XP4(folder="XP/RW/", ds="lastfm"):
     codeSave = ds+"_"
     nbLoops = 3000
     res_beta = 40
-    K = 10
+
+    obs, indt_to_time = getDataRW(folder, ds)
+    obs_train, obs_validation, obs_test = splitDS(obs, folds)
+    saveData(folder+f"{ds}/", codeSave, obs_train, obs_validation, obs_test, indt_to_time)
 
     for K in [5, 10, 15, 20, 30]:
-        obs, indt_to_time = getDataRW(folder, ds)
-        obs_train, obs_validation, obs_test = splitDS(obs, folds)
-        saveData(folder+f"{ds}/", codeSave, obs_train, obs_validation, obs_test, indt_to_time)
-
-        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, use_p_true=False, printProg=False)
-        saveParams(folder+f"{ds}/", codeSave, fitted_params)
+        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, use_p_true=False, printProg=True)
+        saveParams(folder+f"{ds}/", codeSave+f"{K}_", fitted_params)
         fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=False, printProg=False)
-        saveParams(folder+f"{ds}/", codeSave+"beta_null_", fitted_params)
+        saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"beta_null_", fitted_params)
         fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=False, printProg=False)
-        saveParams(folder+f"{ds}/", codeSave+"one_epoch_", fitted_params)
+        saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"one_epoch_", fitted_params)
 
 
-#XP = int(input("Which XP > "))
-XP = 4
+XP = int(input("Which XP > "))
+#XP = 4
 
 if XP==1:
     XP1()
@@ -420,8 +437,8 @@ if XP==2:
 if XP==3:
     XP3()
 if XP==4:
-    #ds = str(input("Which DS > "))
-    ds = "lastfm"
+    ds = str(input("Which DS > "))
+    #ds = "lastfm"
     XP4(ds=ds)
 
 
