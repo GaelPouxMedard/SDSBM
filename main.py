@@ -68,6 +68,15 @@ def getData(I,O,K,Nepochs, NobsperI,Tmax, typeVar="sin", shiftp=0.05):
 
     return obs, theta_t, p, indt_to_time
 
+def getDataRW(folder, ds):
+    with open(f"{folder}/Data/{ds}_indt_to_time.pkl", "rb") as f:
+        indt_to_time = pickle.load(f)
+    with open(f"{folder}/Data/{ds}_observations.pkl", "rb") as f:
+        obs = pickle.load(f)
+
+    obs = np.array(obs, dtype=object)
+    return obs, indt_to_time
+
 def saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time):
     curfol = "./"
     for fol in folder.split("/"):
@@ -374,16 +383,6 @@ def XP3(folder = "XP/Synth/VarP/"):
                 fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=infer_p, p_true=p_true, printProg=False)
                 saveParams(folder, codeSave+"one_epoch_", fitted_params)
 
-
-def getDataRW(folder, ds):
-    with open(f"{folder}/Data/{ds}_indt_to_time.pkl", "wb+") as f:
-        indt_to_time = pickle.load(f)
-    with open(f"{folder}/Data/{ds}_observations.pkl", "wb+") as f:
-        obs = pickle.load(f)
-
-    return obs, indt_to_time
-
-
 # Real world XP
 def XP4(folder="XP/RW/", ds="lastfm"):
     curfol = "./"
@@ -411,7 +410,8 @@ def XP4(folder="XP/RW/", ds="lastfm"):
         saveParams(folder, codeSave+"one_epoch_", fitted_params)
 
 
-XP = int(input("Which XP > "))
+#XP = int(input("Which XP > "))
+XP = 4
 
 if XP==1:
     XP1()
@@ -419,9 +419,10 @@ if XP==2:
     XP2()
 if XP==3:
     XP3()
-if XP==3:
-    ds = str(input("Which DS > "))
-    XP3(ds=ds)
+if XP==4:
+    #ds = str(input("Which DS > "))
+    ds = "lastfm"
+    XP4(ds=ds)
 
 
 # x,y = [], []

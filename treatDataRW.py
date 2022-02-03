@@ -4,7 +4,7 @@ import pickle
 
 file = "reddit.csv"
 
-for file in ["reddit.csv", "lastfm.csv", "wikipedia.csv", "mooc.csv"]:
+for file in ["lastfm.csv", "wikipedia.csv", "reddit.csv", "mooc.csv"]:
     print(file)
     timeslice = 0.
     if "reddit" in file:
@@ -40,7 +40,7 @@ for file in ["reddit.csv", "lastfm.csv", "wikipedia.csv", "mooc.csv"]:
 
 
 
-    with open("XP/RW/Data/"+file.replace('.csv', 'indt_to_time.pkl'), "wb+") as f:
+    with open("XP/RW/Data/"+file.replace('.csv', '_indt_to_time.pkl'), "wb+") as f:
         pickle.dump(indt_to_time, f)
     with open("XP/RW/Data/"+file.replace('.csv', '_observations.pkl'), "wb+") as f:
         pickle.dump(obs, f)
