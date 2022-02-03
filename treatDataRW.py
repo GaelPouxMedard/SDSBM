@@ -3,16 +3,20 @@ import pandas as pd
 import pickle
 
 file = "reddit.csv"
+altscale=True
 
 for file in ["lastfm.csv", "wikipedia.csv", "reddit.csv", "mooc.csv"]:
     print(file)
     timeslice = 0.
     if "reddit" in file:
         timeslice = 24*3600
+        if altscale: timeslice = 24*3600*3  # 3j
     if "wikipedia" in file:
         timeslice = 24*3600
+        if altscale: timeslice = 24*3600*5  # 5j
     if "lastfm" in file:
         timeslice = 24*3600*30
+        if altscale: timeslice = 24*3600*3  # 3j
 
     indt_to_time = {}
     indt = 0
@@ -41,8 +45,10 @@ for file in ["lastfm.csv", "wikipedia.csv", "reddit.csv", "mooc.csv"]:
                 pause()
             timeprec=time
 
-    with open("XP/RW/Data/"+file.replace('.csv', '_indt_to_time.pkl'), "wb+") as f:
+    alttxt = ""
+    if altscale: alttxt="_alt"
+    with open("XP/RW/Data/"+file.replace('.csv', alttxt+'_indt_to_time.pkl'), "wb+") as f:
         pickle.dump(indt_to_time, f)
-    with open("XP/RW/Data/"+file.replace('.csv', '_observations.pkl'), "wb+") as f:
+    with open("XP/RW/Data/"+file.replace('.csv', alttxt+'_observations.pkl'), "wb+") as f:
         pickle.dump(obs, f)
 

@@ -430,7 +430,7 @@ def XP4(folder="XP/RW/", ds="lastfm"):
     codeSave = ds+"_"
     nbLoops = 500
     log_beta_bb=(0, 5)
-    if ds=="lastfm":  # Not the same time scale
+    if "lastfm" in ds:  # Not the same time scale
         log_beta_bb=(2, 8)
     res_beta = 10
 
