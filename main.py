@@ -374,6 +374,9 @@ def XP3(folder = "XP/Synth/VarP/"):
                 fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=infer_p, p_true=p_true, printProg=False)
                 saveParams(folder, codeSave+"one_epoch_", fitted_params)
 
+# Real world XP
+def XP4(folder="XP/RW/"):
+
 
 XP = int(input("Which XP > "))
 
