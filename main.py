@@ -374,6 +374,16 @@ def XP3(folder = "XP/Synth/VarP/"):
                 fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=infer_p, p_true=p_true, printProg=False)
                 saveParams(folder, codeSave+"one_epoch_", fitted_params)
 
+
+def getDataRW(folder, ds):
+    with open(f"{folder}/Data/{ds}_indt_to_time.pkl", "wb+") as f:
+        indt_to_time = pickle.load(f)
+    with open(f"{folder}/Data/{ds}_observations.pkl", "wb+") as f:
+        obs = pickle.load(f)
+
+    return obs, indt_to_time
+
+
 # Real world XP
 def XP4(folder="XP/RW/", ds="lastfm"):
     curfol = "./"
@@ -381,6 +391,25 @@ def XP4(folder="XP/RW/", ds="lastfm"):
         if fol not in os.listdir(curfol) and fol!="":
             os.mkdir(curfol+fol)
         curfol += fol+"/"
+
+    folds = 5
+    codeSave = ds+"_"
+    nbLoops = 3000
+    res_beta = 40
+    K = 10
+
+    for K in [5, 10, 15, 20, 30]:
+        obs, indt_to_time = getDataRW(folder, ds)
+        obs_train, obs_validation, obs_test = splitDS(obs, folds)
+        saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
+
+        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, use_p_true=False, printProg=False)
+        saveParams(folder, codeSave, fitted_params)
+        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=False, printProg=False)
+        saveParams(folder, codeSave+"beta_null_", fitted_params)
+        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=False, printProg=False)
+        saveParams(folder, codeSave+"one_epoch_", fitted_params)
+
 
 XP = int(input("Which XP > "))
 
@@ -390,6 +419,9 @@ if XP==2:
     XP2()
 if XP==3:
     XP3()
+if XP==3:
+    ds = str(input("Which DS > "))
+    XP3(ds=ds)
 
 
 # x,y = [], []
