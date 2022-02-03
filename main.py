@@ -9,7 +9,6 @@ from sklearn.metrics import roc_auc_score, average_precision_score, f1_score
 from scipy.special import gamma, gammaln
 import os
 
-np.random.seed(111)
 
 def getData(I,O,K,Nepochs, NobsperI,Tmax, typeVar="sin", shiftp=0.05):
     p = np.random.random((K, O))
@@ -146,7 +145,7 @@ def log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs):
 
         alphak /= div + 1e-20
 
-        vecPrior.append(beta*alphak)  # alphak = beta*(1 + thetak)
+        vecPrior.append(beta*alphak)  # alphak = 1 + beta*thetak
 
     return np.array(vecPrior)
 
@@ -169,7 +168,7 @@ def maximizationTheta(obs, thetaPrev, p, indt_to_time, K, beta, alpha_tr, Nepoch
 
     theta += vecPrior
 
-    phi = alpha_tr.sum(-1) + vecPrior.sum(-1)
+    phi = alpha_tr.sum(-1) + vecPrior.sum(-1)  # Should do -1, but already done in log_prior()
 
     theta /= phi[:, :, None] + 1e-20
 
