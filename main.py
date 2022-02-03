@@ -277,11 +277,11 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
 
                 if iter_em%10==0:
                     L, L_prior = likelihood(alpha_tr, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch)
+                    print(f"{iter_em}/{nbLoops} - K={K} - B={beta} - L={L}")
                     if (Lprev-L)/Lprev<0.01 and rw:
                         print("BROKEN", (Lprev-L)/Lprev)
                         break
                     Lprev = L
-                    print(f"{iter_em}/{nbLoops} - K={K} - B={beta} - L={L}")
 
                 allProbs = np.tensordot(theta, p, axes=1)+1e-20
                 alphadivided = alpha_tr/allProbs
