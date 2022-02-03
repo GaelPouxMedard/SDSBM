@@ -16,7 +16,8 @@ for file in ["lastfm.csv", "wikipedia.csv", "reddit.csv", "mooc.csv"]:
 
     indt_to_time = {}
     indt = 0
-    endPeriod = timeslice*(indt+1)  # 0
+    endPeriod = timeslice*(indt+1)
+    indt_to_time[indt] = 0.
     obs = []
     timeprec = -1e20
 
@@ -26,6 +27,8 @@ for file in ["lastfm.csv", "wikipedia.csv", "reddit.csv", "mooc.csv"]:
             line_splitted = line.replace("\n", "").split(",")
             usr, itm, time = line_splitted[:3]
             time=float(time)
+            usr = int(usr)
+            itm = int(itm)
 
             if time>endPeriod:
                 indt += 1

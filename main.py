@@ -400,14 +400,14 @@ def XP4(folder="XP/RW/", ds="lastfm"):
     for K in [5, 10, 15, 20, 30]:
         obs, indt_to_time = getDataRW(folder, ds)
         obs_train, obs_validation, obs_test = splitDS(obs, folds)
-        saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
+        saveData(folder+f"{ds}/", codeSave, obs_train, obs_validation, obs_test, indt_to_time)
 
         fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, use_p_true=False, printProg=False)
-        saveParams(folder, codeSave, fitted_params)
+        saveParams(folder+f"{ds}/", codeSave, fitted_params)
         fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=False, printProg=False)
-        saveParams(folder, codeSave+"beta_null_", fitted_params)
+        saveParams(folder+f"{ds}/", codeSave+"beta_null_", fitted_params)
         fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=False, printProg=False)
-        saveParams(folder, codeSave+"one_epoch_", fitted_params)
+        saveParams(folder+f"{ds}/", codeSave+"one_epoch_", fitted_params)
 
 
 #XP = int(input("Which XP > "))
