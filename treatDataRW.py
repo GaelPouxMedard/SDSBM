@@ -19,7 +19,7 @@ for file in ["reddit.csv", "lastfm.csv", "wikipedia.csv", "mooc.csv"]:
     endPeriod = timeslice*(indt+1)  # 0
     obs = []
     timeprec = -1e20
-    with open("XP/RW/"+file.replace('.csv', '_observations.txt'), "w+") as o:
+    with open("XP/RW/Data/"+file.replace('.csv', '_observations.txt'), "w+") as o:
         with open("XP/RW/"+file, "r") as f:
             labels = f.readline().split(",")
             for line in f:
@@ -40,6 +40,6 @@ for file in ["reddit.csv", "lastfm.csv", "wikipedia.csv", "mooc.csv"]:
 
 
 
-    with open("XP/RW/"+file.replace('.csv', 'indt_to_time.pkl'), "wb+") as f:
+    with open("XP/RW/Data/"+file.replace('.csv', 'indt_to_time.pkl'), "wb+") as f:
         pickle.dump(indt_to_time, f)
 

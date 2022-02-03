@@ -375,8 +375,12 @@ def XP3(folder = "XP/Synth/VarP/"):
                 saveParams(folder, codeSave+"one_epoch_", fitted_params)
 
 # Real world XP
-def XP4(folder="XP/RW/"):
-
+def XP4(folder="XP/RW/", ds="lastfm"):
+    curfol = "./"
+    for fol in (folder+ds+"/").split("/"):
+        if fol not in os.listdir(curfol) and fol!="":
+            os.mkdir(curfol+fol)
+        curfol += fol+"/"
 
 XP = int(input("Which XP > "))
 
