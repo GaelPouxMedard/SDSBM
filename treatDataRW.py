@@ -97,18 +97,18 @@ def redoEpigraphy():
 
 altscale=True
 
-for file in ["epigraphy.csv", "lastfm.csv", "wikipedia.csv", "reddit.csv", "mooc.csv"]:
+for file in ["reddit.csv", "epigraphy.csv", "lastfm.csv", "wikipedia.csv", "mooc.csv"]:
     print(file)
     timeslice = 0.
     if "reddit" in file:
         timeslice = 24*3600  # 1j
-        if altscale: timeslice = 24*3600/24  # 1h
+        if altscale: timeslice = 24*3600/2  # 12h
     if "wikipedia" in file:
         timeslice = 24*3600  # 1j
         if altscale: timeslice = 24*3600/24  # 1h
     if "lastfm" in file:
-        timeslice = 24*3600*3  # 3j
-        if altscale: timeslice = 24*3600  # 1j
+        timeslice = 24*3600*15  # 3j
+        if altscale: timeslice = 24*3600*3  # 1j
     if "epigraphy" in file:
         timeslice = 24*3600*365*1  # 1y
         if altscale: timeslice = 24*3600*365*5  # 5y
