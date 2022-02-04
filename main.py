@@ -431,6 +431,10 @@ def XP4(folder="XP/RW/", ds="lastfm"):
     nbLoops = 500
     log_beta_bb=(0, 5)
     res_beta = 10
+    if "epigraphy" in ds:
+        log_beta_bb=(0, 10)
+        res_beta = 40
+
 
     obs, indt_to_time = getDataRW(folder, ds)
     obs_train, obs_validation, obs_test = splitDS(obs, folds)
