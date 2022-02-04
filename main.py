@@ -153,13 +153,13 @@ def log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs, Nobs_epoch):
         indsPrec = list(range(np.max((indt-limNodes, 0)), indt))
         Nobsprev = Nobs_epoch[indsPrec, None, None]
         timeDiffs = (listIndtToTime[indt]-listIndtToTime[indsPrec])[:, None, None]
-        alphak += (thetaPrev[indsPrec]*Nobsprev/timeDiffs).sum(0)
+        alphak += (thetaPrev[indsPrec]*Nobsprev/timeDiffs).sum(axis=0)
         div += (Nobsprev/timeDiffs).sum()
 
         indsSuiv = list(range(indt+1, np.min((indt+1+limNodes, len(thetaPrev)))))
         Nobssuiv = Nobs_epoch[indsSuiv, None, None]
         timeDiffs = (listIndtToTime[indsSuiv]-listIndtToTime[indt])[:, None, None]
-        alphak += (thetaPrev[indsSuiv]*Nobssuiv/timeDiffs).sum(0)
+        alphak += (thetaPrev[indsSuiv]*Nobssuiv/timeDiffs).sum(axis=0)
         div += (Nobssuiv/timeDiffs).sum()
 
         if div != 0:
@@ -167,6 +167,7 @@ def log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs, Nobs_epoch):
 
         vecPrior.append(beta*alphak)  # alphak = 1 + beta*thetak
 
+    print(vecPrior)
     return np.array(vecPrior)
 
 def likelihood(alpha_tr, alphannz, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch):
