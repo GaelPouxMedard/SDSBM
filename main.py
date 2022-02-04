@@ -167,15 +167,11 @@ def log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs, Nobs_epoch):
 
         vecPrior.append(beta*alphak)  # alphak = 1 + beta*thetak
 
-    if beta>2:
-        print(vecPrior[0], list(thetaPrev[0]))
     return np.array(vecPrior)
 
 def likelihood(alpha_tr, alphannz, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch):
     allProbs = theta.dot(p)[alphannz]
-    allProbs[allProbs==0.]=1e-20
-
-    L = np.sum(np.log(alpha_tr[alphannz] * allProbs))
+    L = np.sum(alpha_tr[alphannz]*np.log(allProbs))
 
     value_prior = 0
     if beta != 0:
@@ -195,10 +191,9 @@ def maximizationTheta(obs, alphadivided, thetaPrev, p, indt_to_time, K, beta, al
 
     theta += vecPrior
 
-    norm = theta.sum(axis=-1)[:, :, None]
-    #norm[norm==0.] = 1e-20
+    norm = theta.sum(axis=-1)
     nnz = norm.nonzero()
-    theta[nnz] /= norm[nnz]
+    theta[nnz] /= norm[nnz[0], nnz[1], None]
 
     # Equivalent but slower
     # phi = alpha_tr.sum(-1) + vecPrior.sum(-1)
@@ -210,9 +205,9 @@ def maximizationP(obs, alphadivided, theta, pPrev, K, alpha_tr, Nobs_epoch):
     p = np.tensordot(theta, alphadivided, axes=((0,1), (0,1)))
     p = p*pPrev
 
-    norm = p.sum(-1)[:, None]
-    norm[norm==0.] = 1e-20
-    p /= norm
+    norm = p.sum(-1)
+    nnz = norm.nonzero()
+    p /= norm[nnz[0], None]
 
     return p
 
