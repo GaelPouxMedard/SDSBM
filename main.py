@@ -167,7 +167,8 @@ def log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs, Nobs_epoch):
 
         vecPrior.append(beta*alphak)  # alphak = 1 + beta*thetak
 
-    print(vecPrior)
+    if beta>2:
+        print(vecPrior)
     return np.array(vecPrior)
 
 def likelihood(alpha_tr, alphannz, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch):
