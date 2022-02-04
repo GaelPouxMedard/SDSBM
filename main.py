@@ -290,7 +290,7 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
 
             for iter_em in range(nbLoops):
 
-                if iter_em%1==0:
+                if iter_em%10==0:
                     L, L_prior = likelihood(alpha_tr, alphannz, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch)
                     print(f"{iter_em}/{nbLoops} - K={K} - B={beta} - L={L}")
                     if Lprev>L: print("================ PROBLEM", Lprev-L)
