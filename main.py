@@ -194,7 +194,7 @@ def maximizationTheta(obs, alphadivided, thetaPrev, p, indt_to_time, K, beta, al
     theta += vecPrior
 
     norm = theta.sum(axis=-1)[:, :, None]
-    norm[norm==0.] = 1e-20
+    #norm[norm==0.] = 1e-20
     nnz = norm.nonzero()
     theta[nnz] /= norm[nnz]
 
