@@ -176,7 +176,7 @@ def likelihood(alpha_tr, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch):
 
     if beta != 0:
         priors = log_prior(alpha_tr, theta, indt_to_time, beta, Nepochs, Nobs_epoch)
-        value_prior = gammaln(np.sum(priors)) - np.sum(gammaln(priors)) + np.sum(priors*np.log(theta+1e-20))
+        value_prior = gammaln(np.sum(priors)+1e-20) - np.sum(gammaln(priors+1e-20)) + np.sum(priors*np.log(theta+1e-20))
 
     return L, L+value_prior
 
@@ -430,8 +430,6 @@ def XP4(folder="XP/RW/", ds="lastfm"):
     codeSave = ds+"_"
     nbLoops = 500
     log_beta_bb=(0, 5)
-    if "lastfm" in ds:  # Not the same time scale
-        log_beta_bb=(2, 8)
     res_beta = 10
 
     obs, indt_to_time = getDataRW(folder, ds)

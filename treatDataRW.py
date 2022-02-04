@@ -9,14 +9,14 @@ for file in ["lastfm.csv", "wikipedia.csv", "reddit.csv", "mooc.csv"]:
     print(file)
     timeslice = 0.
     if "reddit" in file:
-        timeslice = 24*3600
-        if altscale: timeslice = 24*3600*3  # 3j
+        timeslice = 24*3600  # 1j
+        if altscale: timeslice = 24*3600/24  # 1h
     if "wikipedia" in file:
-        timeslice = 24*3600
-        if altscale: timeslice = 24*3600*5  # 5j
+        timeslice = 24*3600  # 1j
+        if altscale: timeslice = 24*3600/24  # 1h
     if "lastfm" in file:
-        timeslice = 24*3600*30
-        if altscale: timeslice = 24*3600*3  # 3j
+        timeslice = 24*3600*3  # 3j
+        if altscale: timeslice = 24*3600  # 1j
 
     indt_to_time = {}
     indt = 0
