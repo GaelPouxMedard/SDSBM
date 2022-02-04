@@ -178,11 +178,11 @@ def likelihood(alpha_tr, alphannz, theta, p, indt_to_time, beta, Nepochs, Nobs_e
     value_prior = 0
     if beta != 0:
         priors = log_prior(alpha_tr, theta, indt_to_time, beta, Nepochs, Nobs_epoch)
-        nnzpriors = priors.nonzero()
+        priors[priors==0.]=1e-20
         theta[theta==0.]=1e-20
-        value_prior = gammaln(np.sum(priors[nnzpriors])) \
-                      - np.sum(gammaln(priors[nnzpriors])) \
-                      + np.sum(priors[nnzpriors]*np.log(theta[nnzpriors]))
+        value_prior = gammaln(np.sum(priors)) \
+                      - np.sum(gammaln(priors)) \
+                      + np.sum(priors*np.log(theta))
 
     return L, L+value_prior
 
@@ -194,8 +194,8 @@ def maximizationTheta(obs, alphadivided, thetaPrev, p, indt_to_time, K, beta, al
     theta += vecPrior
 
     norm = theta.sum(axis=-1)[:, :, None]
-    nnz = norm.nonzero()
-    theta[nnz] /= norm[nnz]
+    norm[norm==0.] = 1e-20
+    theta /= norm
 
     # Equivalent but slower
     # phi = alpha_tr.sum(-1) + vecPrior.sum(-1)
@@ -208,8 +208,8 @@ def maximizationP(obs, alphadivided, theta, pPrev, K, alpha_tr, Nobs_epoch):
     p = p*pPrev
 
     norm = p.sum(-1)[:, None]
-    nnz = norm.nonzero()
-    p[nnz] /= norm[nnz]
+    norm[norm==0.] = 1e-20
+    p /= norm
 
     return p
 
@@ -226,8 +226,6 @@ def evaluate(obs_test, theta, p, print_res=False):
         true.append(true_tmp)
         pred.append(pred_tmp)
 
-    print(true)
-    print(pred)
     roc = roc_auc_score(true, pred, average="micro")
     ap = average_precision_score(true, pred, average="micro")
     F1 = f1_score(true, (np.array(pred)>0.5).astype(int), average="micro")
