@@ -446,8 +446,8 @@ def XP4(folder="XP/RW/", ds="lastfm"):
     folds = 5
     codeSave = ds+"_"
     nbLoops = 1000
-    log_beta_bb=(0, 5)
-    res_beta = 10
+    log_beta_bb=(0, 7)
+    res_beta = 20
     if "epigraphy" in ds:
         log_beta_bb=(0, 10)
         res_beta = 40
