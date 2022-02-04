@@ -8,7 +8,6 @@ from scipy.stats import dirichlet
 from sklearn.metrics import roc_auc_score, average_precision_score, f1_score
 from scipy.special import gamma, gammaln
 import os
-import pprofile
 import time
 
 """
@@ -163,20 +162,27 @@ def log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs, Nobs_epoch):
         alphak += (thetaPrev[indsSuiv]*Nobssuiv/timeDiffs).sum(0)
         div += (Nobssuiv/timeDiffs).sum()
 
-        alphak /= div + 1e-20
+        if div != 0:
+            alphak /= div
 
         vecPrior.append(beta*alphak)  # alphak = 1 + beta*thetak
 
     return np.array(vecPrior)
 
-def likelihood(alpha_tr, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch):
-    nnz = (alpha_tr>0).astype(bool)
-    L = np.sum(np.log(alpha_tr[nnz] * (theta.dot(p))[nnz] + 1e-20))
-    value_prior = 0
+def likelihood(alpha_tr, alphannz, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch):
+    allProbs = theta.dot(p)[alphannz]
+    allProbs[allProbs==0.]=1e-20
 
+    L = np.sum(np.log(alpha_tr[alphannz] * allProbs))
+
+    value_prior = 0
     if beta != 0:
         priors = log_prior(alpha_tr, theta, indt_to_time, beta, Nepochs, Nobs_epoch)
-        value_prior = gammaln(np.sum(priors)+1e-20) - np.sum(gammaln(priors+1e-20)) + np.sum(priors*np.log(theta+1e-20))
+        nnzpriors = priors.nonzero()
+        theta[theta==0.]=1e-20
+        value_prior = gammaln(np.sum(priors[nnzpriors])) \
+                      - np.sum(gammaln(priors[nnzpriors])) \
+                      + np.sum(priors[nnzpriors]*np.log(theta[nnzpriors]))
 
     return L, L+value_prior
 
@@ -187,11 +193,13 @@ def maximizationTheta(obs, alphadivided, thetaPrev, p, indt_to_time, K, beta, al
 
     theta += vecPrior
 
-    theta /= theta.sum(axis=-1)[:, :, None]+1e-20
+    norm = theta.sum(axis=-1)[:, :, None]
+    nnz = norm.nonzero()
+    theta[nnz] /= norm[nnz]
 
     # Equivalent but slower
     # phi = alpha_tr.sum(-1) + vecPrior.sum(-1)
-    # theta /= phi[:, :, None] + 1e-20
+    # theta /= phi[:, :, None]
 
     return theta
 
@@ -199,7 +207,9 @@ def maximizationP(obs, alphadivided, theta, pPrev, K, alpha_tr, Nobs_epoch):
     p = np.tensordot(theta, alphadivided, axes=((0,1), (0,1)))
     p = p*pPrev
 
-    p /= p.sum(-1)[:, None]+1e-20
+    norm = p.sum(-1)[:, None]
+    nnz = norm.nonzero()
+    p[nnz] /= norm[nnz]
 
     return p
 
@@ -260,6 +270,8 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
         for (i,o,indt) in obs_train[fold]:
             alpha_tr[indt,i,o] += 1
 
+        alphannz = alpha_tr.nonzero()
+
         Nobs_epoch = alpha_tr.sum(axis=(1,2))
 
         theta_init, p_init = initVar(I,K,O,Nepochs)
@@ -273,13 +285,16 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
             p = pPrev
 
             Lprev = -1e20
+            Lprevprior = -1e20
             nbTimesStable = 0
+
             for iter_em in range(nbLoops):
 
-                if iter_em%10==0:
-                    L, L_prior = likelihood(alpha_tr, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch)
+                if iter_em%1==0:
+                    L, L_prior = likelihood(alpha_tr, alphannz, theta, p, indt_to_time, beta, Nepochs, Nobs_epoch)
                     print(f"{iter_em}/{nbLoops} - K={K} - B={beta} - L={L}")
                     if Lprev>L: print("================ PROBLEM", Lprev-L)
+                    #if Lprevprior>L_prior: print("================ PROBLEM PRIOR", Lprevprior-L_prior)
                     absvar = np.abs((Lprev-L)/Lprev)
                     if absvar<0.001 and rw:
                         if nbTimesStable>=30:  # break the loop of small var 30 times in a row
@@ -290,8 +305,10 @@ def run(obs_train, obs_validation, K, indt_to_time, nbLoops=1000, log_beta_bb=(-
                     else:
                         nbTimesStable = 0
                     Lprev = L
+                    Lprevprior = L_prior
 
-                allProbs = np.tensordot(theta, p, axes=1)+1e-20
+                allProbs = np.tensordot(theta, p, axes=1)
+                allProbs[allProbs==0.]=1e-20
                 alphadivided = alpha_tr/allProbs
 
                 theta = maximizationTheta(obs_train[fold], alphadivided, thetaPrev, pPrev, indt_to_time, K, beta, alpha_tr, Nepochs, Nobs_epoch)
@@ -428,7 +445,7 @@ def XP4(folder="XP/RW/", ds="lastfm"):
 
     folds = 5
     codeSave = ds+"_"
-    nbLoops = 500
+    nbLoops = 1000
     log_beta_bb=(0, 5)
     res_beta = 10
     if "epigraphy" in ds:
@@ -444,9 +461,9 @@ def XP4(folder="XP/RW/", ds="lastfm"):
         tic = time.time()
         fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=log_beta_bb, res_beta=res_beta, use_p_true=False, printProg=True, rw=True)
         saveParams(folder+f"{ds}/", codeSave+f"{K}_", fitted_params)
-        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=False, printProg=False, rw=True)
+        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=False, printProg=True, rw=True)
         saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"beta_null_", fitted_params)
-        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=False, printProg=False, rw=True)
+        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=False, printProg=True, rw=True)
         saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"one_epoch_", fitted_params)
         print(f"K={K} - {np.round((time.time()-tic)/(3600), 2)}h elapsed =====================================")
 
