@@ -226,6 +226,8 @@ def evaluate(obs_test, theta, p, print_res=False):
         true.append(true_tmp)
         pred.append(pred_tmp)
 
+    print(true)
+    print(pred)
     roc = roc_auc_score(true, pred, average="micro")
     ap = average_precision_score(true, pred, average="micro")
     F1 = f1_score(true, (np.array(pred)>0.5).astype(int), average="micro")
