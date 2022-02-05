@@ -367,11 +367,11 @@ def XP1(folder = "XP/Synth/NobsperI/"):
             saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
             saveTrueParams(folder, codeSave, theta_true, p_true)
 
-            fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, p_true=p_true, printProg=True)
+            fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, p_true=p_true, printProg=True)
             saveParams(folder, codeSave, fitted_params)
-            fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, p_true=p_true, printProg=False)
+            fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, p_true=p_true, printProg=False)
             saveParams(folder, codeSave+"beta_null_", fitted_params)
-            fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, p_true=p_true, printProg=False)
+            fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, one_epoch=True, p_true=p_true, printProg=False)
             saveParams(folder, codeSave+"one_epoch_", fitted_params)
 
 # Varying Nepochs
@@ -396,11 +396,11 @@ def XP2(folder = "XP/Synth/Nepochs/"):
             saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
             saveTrueParams(folder, codeSave, theta_true, p_true)
 
-            fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, p_true=p_true, printProg=False)
+            fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, p_true=p_true, printProg=False)
             saveParams(folder, codeSave, fitted_params)
-            fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, p_true=p_true, printProg=False)
+            fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, p_true=p_true, printProg=False)
             saveParams(folder, codeSave+"beta_null_", fitted_params)
-            fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, p_true=p_true, printProg=False)
+            fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, one_epoch=True, p_true=p_true, printProg=False)
             saveParams(folder, codeSave+"one_epoch_", fitted_params)
 
 # Varying p
@@ -428,11 +428,11 @@ def XP3(folder = "XP/Synth/VarP/"):
                 saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
                 saveTrueParams(folder, codeSave, theta_true, p_true)
 
-                fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, use_p_true=infer_p, p_true=p_true, printProg=False)
+                fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, use_p_true=infer_p, p_true=p_true, printProg=False)
                 saveParams(folder, codeSave, fitted_params)
-                fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=infer_p, p_true=p_true, printProg=False)
+                fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=infer_p, p_true=p_true, printProg=False)
                 saveParams(folder, codeSave+"beta_null_", fitted_params)
-                fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=infer_p, p_true=p_true, printProg=False)
+                fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=infer_p, p_true=p_true, printProg=False)
                 saveParams(folder, codeSave+"one_epoch_", fitted_params)
 
 # Real world XP
