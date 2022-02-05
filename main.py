@@ -447,7 +447,7 @@ def XP4(folder="XP/RW/", ds="lastfm"):
     codeSave = ds+"_"
     nbLoops = 1000
     log_beta_bb=(-1, 2)
-    res_beta = 20
+    res_beta = 10
     if "epigraphy" in ds:
         res_beta = 100
 
@@ -458,11 +458,11 @@ def XP4(folder="XP/RW/", ds="lastfm"):
 
     for K in [5, 10, 20, 30]:
         tic = time.time()
-        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, log_beta_bb=log_beta_bb, res_beta=res_beta, use_p_true=False, printProg=True, rw=True)
+        fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, log_beta_bb=log_beta_bb, res_beta=res_beta, use_p_true=False, printProg=True, rw=True)
         saveParams(folder+f"{ds}/", codeSave+f"{K}_", fitted_params)
-        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=False, printProg=True, rw=True)
+        fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=False, printProg=True, rw=True)
         saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"beta_null_", fitted_params)
-        fitted_params = run(obs_train, obs_validation, K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=False, printProg=True, rw=True)
+        fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=False, printProg=True, rw=True)
         saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"one_epoch_", fitted_params)
         print(f"K={K} - {np.round((time.time()-tic)/(3600), 2)}h elapsed =====================================")
 
