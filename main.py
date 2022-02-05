@@ -20,6 +20,8 @@ profiler.dump_stats("Benchmark.txt")
 pause()
 """
 
+np.random.seed(1111)
+
 def getData(I,O,K,Nepochs, NobsperI,Tmax, typeVar="sin", shiftp=0.05):
     p = np.random.random((K, O))
     p /= p.sum(-1)[:, None]
