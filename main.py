@@ -449,8 +449,8 @@ def XP4(folder="XP/RW/", ds="lastfm"):
     log_beta_bb=(0, 7)
     res_beta = 20
     if "epigraphy" in ds:
-        log_beta_bb=(0, 10)
-        res_beta = 40
+        log_beta_bb=(-1, 10)
+        res_beta = 100
 
 
     obs, indt_to_time = getDataRW(folder, ds)
