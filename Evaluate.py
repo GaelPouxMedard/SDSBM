@@ -389,6 +389,7 @@ def XP4_allK(folder_base="XP/RW/", ds=None):
             plt.savefig(folderFig+codeSaveFig+metric[1]+"_vs_K.pdf")
             plt.close()
 
+
 def alluvialPlot():
 
     import plotly
@@ -557,7 +558,64 @@ def alluvialPlot():
     fig.write_image("Plots/RW/Status.pdf", height=1080, width=1920, scale=2)
     #fig.show()
 
+# Varying Nepochs
+def IllustrationMethod(folder = "XP/Synth/Nepochs/"):
+    folderFig = folder.replace("XP", "Plots")
+    ensureFolder(folderFig)
+    I = 100
+    K = 3
+    O = 3
 
+    NobsperI = 1000
+    Tmax = 2*np.pi
+    nbLoops = 1000
+    folds = 5
+    res_beta = 40
+
+    scale=7
+    plt.figure(figsize=(0.60*scale, 0.75*scale))
+    for type_i, typeVar in enumerate(["sin", "rnd"]):
+        plt.subplot(2,1,type_i+1)
+        for Nepochs_div in reversed([5]):  # = Nobs moyen par epoque
+            Nepochs = int(NobsperI/Nepochs_div)
+            codeSave = f"{typeVar}_Nepochs={Nepochs}_"
+
+            theta_true, p_true = getTrueParams(folder, codeSave)
+
+            fitted_params = getParams(folder, codeSave, folds)
+            fitted_params_beta_null = getParams(folder, codeSave+"beta_null_", folds)
+            fitted_params_one_epoch = getParams(folder, codeSave+"one_epoch_", folds)
+
+            arrx = np.array(list(range(len(theta_true))))
+            i = 0
+            fold = 0
+
+            for k in range(3):
+                if k==0:
+                    plt.plot(fitted_params_beta_null[fold][0][:, i, k], "b-", alpha=0.3, label="Independent time slices")
+                    plt.plot(arrx, [fitted_params_one_epoch[fold][0][:, i, k]]*len(arrx), "y-", label="Static SBM")
+                    plt.plot(fitted_params[fold][0][:, i, k], "r-", label="SDSBM")
+                    plt.plot(theta_true[:, i, k], "k-", linewidth=2, label="Ground truth")
+                else:
+                    plt.plot(fitted_params_beta_null[fold][0][:, i, k], "b-", alpha=0.3)
+                    plt.plot(arrx, [fitted_params_one_epoch[fold][0][:, i, k]]*len(arrx), "y-")
+                    plt.plot(fitted_params[fold][0][:, i, k], "r-")
+                    plt.plot(theta_true[:, i, k], "k-", linewidth=2)
+            plt.ylim([-0.05,1.05])
+            plt.xticks([])
+            if type_i!=0:
+                plt.xlabel("Time")
+                plt.legend()
+            plt.ylabel("Memberships")
+
+    plt.tight_layout()
+    plt.savefig("Plots/Illustration.pdf")
+
+
+
+
+IllustrationMethod()
+pause()
 XP = input("What to evaluate > ")
 if XP=="123":
     XP1()
