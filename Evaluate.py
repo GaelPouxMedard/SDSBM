@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import roc_auc_score, f1_score, average_precision_score
+from sklearn.metrics import roc_auc_score, f1_score, average_precision_score, label_ranking_average_precision_score, coverage_error, precision_recall_curve
 import pickle
 from scipy.stats import sem
 import os
+from copy import deepcopy as copy
 
 def getData(folder, codeSave):
     with open(folder+codeSave+"obs_train.pkl", "rb") as f:
@@ -34,9 +35,11 @@ def getParams(folder, codeSave, folds):
     return fitted_params
 
 
-def evaluate(obs_test, fitted_params, theta_true, p_true, print_res=False, one_epoch=False):
+def evaluate(obs_test, fitted_params, theta_true=None, p_true=None, print_res=False, one_epoch=False, F1_res=10):
     tabRes = []
     labs = []
+
+    obs_test = copy(obs_test)
 
     if one_epoch:
         for fold in range(len(obs_test)):
@@ -59,15 +62,28 @@ def evaluate(obs_test, fitted_params, theta_true, p_true, print_res=False, one_e
             pred.append(pred_tmp)
 
         roc = roc_auc_score(true, pred, average="micro")
-        F1 = f1_score(true, (np.array(pred)>0.5).astype(int), average="micro")
         ap = average_precision_score(true, pred, average="micro")
 
-        diffTet = np.abs(theta-theta_true)
-        mae = np.mean(diffTet)
-        rmse = np.mean(diffTet**2)**0.5
+        rankAvgPrec = label_ranking_average_precision_score(true, pred)
+        c=coverage_error(true, pred)
+        covErrNorm = (c-1)/nbOut
+        F1 = 0
+        for thres in np.linspace(0, 1, F1_res):
+            if F1_res==1:
+                thres=0.5
+            F1_tmp = f1_score(true, (np.array(pred)>thres).astype(int), average="micro")
+            if F1_tmp > F1:
+                F1 = F1_tmp
 
-        labs = ["roc", "F1", "ap", "mae", "rmse"]
-        tabRes.append([roc, F1, ap, mae, rmse])
+        mae = -1
+        rmse = -1
+        if theta_true is not None:
+            diffTet = np.abs(theta-theta_true)
+            mae = np.mean(diffTet)
+            rmse = np.mean(diffTet**2)**0.5
+
+        labs = ["roc", "F1", "ap", "mae", "rmse", "rankAvgPrec", "covErrNorm"]
+        tabRes.append([roc, F1, ap, mae, rmse, rankAvgPrec, covErrNorm])
 
         if fold==0 and False:
             for i in range(9):
@@ -297,21 +313,26 @@ def XP3(folder = "XP/Synth/VarP/"):
                 plt.savefig(folderFig+codeSaveFig+metric[1]+".pdf")
                 plt.close()
 
-# Real world XP
-def XP4(folder="XP/RW/", ds="lastfm"):
+# Real world XP for every K
+def XP4_allK(folder_base="XP/RW/"):
 
-    listDs = ["epigraphy",
-              "epigraphy_alt",
-              "lastfm",
-              "lastfm_alt",
-              "wikipedia",
-              "wikipedia_alt",
-              "reddit",
-              "reddit_alt",
+    listDs = [
+                "epigraphy_alt",
+                "lastfm",
+                "lastfm_alt",
+                "wikipedia",
+                "wikipedia_alt",
+                "reddit",
+                "reddit_alt",
+                "epigraphy",
               ]
 
+
     for ds in listDs:
-        ensureFolder(folder+ds+"/")
+        print(ds)
+        folder = folder_base+ds+"/"
+        folderFig = folder.replace("XP", "Plots")
+        ensureFolder(folderFig+"/")
 
         folds = 5
         codeSave = ds+"_"
@@ -322,19 +343,201 @@ def XP4(folder="XP/RW/", ds="lastfm"):
             res_beta = 100
 
 
-        obs, indt_to_time = getDataRW(folder, ds)
-        obs_train, obs_validation, obs_test = splitDS(obs, folds)
-        saveData(folder+f"{ds}/", codeSave, obs_train, obs_validation, obs_test, indt_to_time)
+        obs_train, obs_validation, obs_test, indt_to_time = getData(folder+"/", codeSave)
 
+        tabx = []
+        tabRes, tabRes_beta_null, tabRes_one_epoch = [], [], []
+        tabStd, tabStd_beta_null, tabStd_one_epoch = [], [], []
+        codeSaveFig = f"_"
         for K in [5, 10, 20, 30]:
-            tic = time.time()
-            fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, log_beta_bb=log_beta_bb, res_beta=res_beta, use_p_true=False, printProg=True, rw=True)
-            saveParams(folder+f"{ds}/", codeSave+f"{K}_", fitted_params)
-            fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=False, printProg=True, rw=True)
-            saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"beta_null_", fitted_params)
-            fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=False, printProg=True, rw=True)
-            saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"one_epoch_", fitted_params)
-            print(f"K={K} - {np.round((time.time()-tic)/(3600), 2)}h elapsed =====================================")
+            fitted_params = getParams(folder, codeSave+f"{K}_", folds)
+            fitted_params_beta_null = getParams(folder, codeSave+f"{K}_"+"beta_null_", folds)
+            fitted_params_one_epoch = getParams(folder, codeSave+f"{K}_"+"one_epoch_", folds)
+
+            res_mean, res_std, res_sem = evaluate(obs_test, fitted_params, print_res=True)
+            tabRes.append(res_mean)
+            tabStd.append(res_std)
+            res_mean_beta_null, res_std_beta_null, res_sem_beta_null = evaluate(obs_test, fitted_params_beta_null, print_res=True)
+            tabRes_beta_null.append(res_mean_beta_null)
+            tabStd_beta_null.append(res_std_beta_null)
+            res_mean_one_epoch, res_std_one_epoch, res_sem_one_epoch = evaluate(obs_test, fitted_params_one_epoch, print_res=True, one_epoch=True)
+            tabRes_one_epoch.append(res_mean_one_epoch)
+            tabStd_one_epoch.append(res_std_one_epoch)
+
+            tabx.append(K)
+
+        tabRes = np.array(tabRes)
+        tabRes_beta_null = np.array(tabRes_beta_null)
+        tabRes_one_epoch = np.array(tabRes_one_epoch)
+        tabStd = np.array(tabStd)
+        tabStd_beta_null = np.array(tabStd_beta_null)
+        tabStd_one_epoch = np.array(tabStd_one_epoch)
+
+        for metric in [(0, "AUC ROC"), (1, "F1 score"), (2, "Average precision"), (5, "Rank average precision"), (6, "Normalized coverage error")]:
+            plt.plot(tabx, tabRes[:, metric[0]], "b", label="SDSBM")
+            plt.fill_between(tabx, tabRes[:, metric[0]]-tabStd[:, metric[0]], tabRes[:, metric[0]]+tabStd[:, metric[0]], color="b", alpha=0.3)
+            plt.plot(tabx, tabRes_beta_null[:, metric[0]], "r", label="No coupling")
+            plt.fill_between(tabx, tabRes_beta_null[:, metric[0]]-tabStd_beta_null[:, metric[0]], tabRes_beta_null[:, metric[0]]+tabStd_beta_null[:, metric[0]], color="r", alpha=0.3)
+            plt.plot(tabx, tabRes_one_epoch[:, metric[0]], "g", label="No temporal dependence")
+            plt.fill_between(tabx, tabRes_one_epoch[:, metric[0]]-tabStd_one_epoch[:, metric[0]], tabRes_one_epoch[:, metric[0]]+tabStd_one_epoch[:, metric[0]], color="g", alpha=0.3)
+            plt.xlabel(r"Number of clusters K")
+            plt.ylabel(metric[1])
+            plt.legend()
+            plt.savefig(folderFig+codeSaveFig+metric[1]+"_vs_K.pdf")
+            plt.close()
+
+def alluvialPlot():
+
+    import plotly
+    colors_plotly = plotly.colors.DEFAULT_PLOTLY_COLORS
+
+    listDs = [
+        "epigraphy",
+        # "epigraphy_alt",
+        # "lastfm",
+        # "lastfm_alt",
+        # "wikipedia",
+        # "wikipedia_alt",
+        # "reddit",
+        # "reddit_alt",
+    ]
+
+    folder_base="XP/RW/"
+    ds = "epigraphy"
+    K = 5
+    folds = 5
+    fold = 1
+
+    folder = folder_base+ds+"/"
+    folderFig = folder.replace("XP", "Plots")
+    ensureFolder(folderFig+"/")
+    codeSave = ds+"_"
+
+    fitted_params = getParams(folder, codeSave+f"{K}_", folds)
+
+    with open("XP/RW/Data/epigraphy_indsToTitles.pkl", "rb") as f:
+        ind_to_title = pickle.load(f)
+    with open("XP/RW/Data/epigraphy_indsToRegions.pkl", "rb") as f:
+        ind_to_region = pickle.load(f)
+    with open("XP/RW/Data/epigraphy_tmin.pkl", "rb") as f:
+        tmin = pickle.load(f)
+
+    theta, p, beta = fitted_params[fold]
+    I = len(theta[0])
+    K = len(p)
+
+    for k in range(len(p)):
+        print(k, "=======")
+        for val, o in reversed(sorted(zip(list(p[k]), list(range(len(p[k])))))):
+            if val>0.05:
+                print(val, ind_to_region[o])
+
+    nomsClusters = ["Rome", "Italia", "Illyria, Hispania, Gauls", "Eastern Europe", "Germany, Asia"]
+    labels = []
+
+    c_items = []
+    groups = []
+    opacity = 0.5
+    for i in range(I):
+        k = np.argmax(np.mean(theta[:, i], axis=0))
+        c = colors_plotly[-k][:-1].replace("rgb", "rgba")+f", {opacity})"
+        c_items.append(c)
+        groups.append(k)
+
+    c_clus = [colors_plotly[k][:-1].replace("rgb", "rgba")+f", {opacity})" for k in range(K)]
+
+    labels = [ind_to_title[i].replace("_", " ").capitalize() for i in range(len(theta[0]))]+[fr"{nomsClusters[k]} · year {tmin}" for k in range(K)]
+    color_nodes = [c_items[i].replace(f", {opacity}", ", 1.") for i in range(len(theta[0]))]+[c_clus[k].replace(f", {opacity}", ", 1.") for k in range(K)]
+    print(labels)
+    source, target, value = [], [], []
+    color = []
+    for i in range(I):
+        for k in range(K):
+            source.append(i)
+            target.append(I+k)
+            value.append(theta[0,i,k])
+            color.append(c_items[i])
+
+    indt = 0
+    tetPrec = theta[0]
+    for t in range(1, len(theta)):
+        if t%100!=0:
+            continue
+        labels += [fr"{nomsClusters[k]} · year {tmin+t}" for k in range(K)]
+        color_nodes += [c_clus[k].replace(f", {opacity}", ", 1.") for k in range(K)]
+        trans = np.zeros((K,K))
+        for i in range(I):
+            trans = np.zeros((K,K))
+            loss = theta[t,i]-tetPrec[i]  # k
+            for k in range(K):
+
+                div = copy(loss)
+                div[div<0]=0
+
+                val = -loss[k]*div/np.sum(div)
+                val[val<0] = 0.
+
+                trans[k] += val
+
+                if loss[k]<0:
+                    trans[k,k] += theta[t,i,k]
+                else:
+                    trans[k,k] += tetPrec[i,k]
+
+            for k1 in range(K):
+                for k2 in range(K):
+                    source.append(I+K*(indt)+k1)
+                    target.append(I+K*(indt+1)+k2)
+                    value.append(trans[k1,k2])
+                    color.append(c_items[i])
 
 
-XP3()
+        print(np.sum(trans))
+
+        # for k1 in range(K):
+        #     for k2 in range(K):
+        #         source.append(I+K*(indt)+k1)
+        #         target.append(I+K*(indt+1)+k2)
+        #         value.append(trans[k1,k2])
+        #         color.append(c_clus[k1])
+
+        tetPrec = theta[t]
+        indt += 1
+
+    labels += [ind_to_title[i].replace("_", " ").capitalize()+" " for i in range(len(theta[0]))]
+    color_nodes += [c_items[i].replace(f", {opacity}", ", 1.") for i in range(len(theta[0]))]
+    for i in range(I):
+        for k in range(K):
+            print(labels[I+K*(indt)+k], labels[I+K*(indt+1)+i])
+            source.append(I+K*(indt)+k)
+            target.append(I+K*(indt+1)+i)
+            value.append(tetPrec[i,k])
+            color.append(c_items[i])
+
+    import plotly.graph_objects as go
+    fig = go.Figure(data=[go.Sankey(
+        node = dict(
+            pad = 15,
+            thickness = 20,
+            line = dict(color = "black", width = 0.3),
+            label = labels,
+            color = color_nodes,
+        ),
+        link = dict(
+            source = source, # indices correspond to labels, eg A1, A2, A1, B1, ...
+            target = target,
+            value = value,
+            color=color,
+        ))])
+
+    fig.update_layout(title_text="Status geographic evolution from latin graves (100BC - 500AC)", font_size=10)
+    fig.write_image("Status.pdf")
+    fig.show()
+
+    pause()
+
+
+
+
+
+alluvialPlot()
