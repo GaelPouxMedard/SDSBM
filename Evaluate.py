@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.metrics import roc_auc_score, f1_score, average_precision_score
 import pickle
 from scipy.stats import sem
+import os
 
 def getData(folder, codeSave):
     with open(folder+codeSave+"obs_train.pkl", "rb") as f:
@@ -92,9 +93,19 @@ def evaluate(obs_test, fitted_params, theta_true, p_true, print_res=False, one_e
         # print("\t".join(map(str, res_std)))
         # print("\t".join(map(str, res_sem)))
 
-    return tabRes
+    return res_mean, res_std, res_sem
 
+def ensureFolder(folder):
+    curfol = "./"
+    for fol in folder.split("/"):
+        if fol not in os.listdir(curfol) and fol!="":
+            os.mkdir(curfol+fol)
+        curfol += fol+"/"
+
+# Varying NobsperI
 def XP1(folder = "XP/Synth/NobsperI/"):
+    folderFig = folder.replace("XP", "Plots")
+    ensureFolder(folderFig)
     I = 100
     K = 3
     O = 3
@@ -106,8 +117,12 @@ def XP1(folder = "XP/Synth/NobsperI/"):
     res_beta = 40
 
     for typeVar in ["rnd", "sin"]:
-        #for NobsperI in np.linspace(Nepochs, Nepochs*100, 21):  # =========================
-        for NobsperI in np.linspace(Nepochs, Nepochs*10, 5):
+        tabx = []
+        tabRes, tabRes_beta_null, tabRes_one_epoch = [], [], []
+        tabStd, tabStd_beta_null, tabStd_one_epoch = [], [], []
+        codeSaveFig = f"{typeVar}_"
+
+        for NobsperI in np.linspace(Nepochs, Nepochs*100, 21):
             NobsperI = int(NobsperI)
             codeSave = f"{typeVar}_Nobs={NobsperI}_"
             print(codeSave)
@@ -118,8 +133,194 @@ def XP1(folder = "XP/Synth/NobsperI/"):
             fitted_params_beta_null = getParams(folder, codeSave+"beta_null_", folds)
             fitted_params_one_epoch = getParams(folder, codeSave+"one_epoch_", folds)
 
-            tabRes = evaluate(obs_test, fitted_params, theta_true, p_true, print_res=True)
-            tabRes = evaluate(obs_test, fitted_params_beta_null, theta_true, p_true, print_res=True)
-            tabRes = evaluate(obs_test, fitted_params_one_epoch, theta_true, p_true, print_res=True, one_epoch=True)
+            res_mean, res_std, res_sem = evaluate(obs_test, fitted_params, theta_true, p_true, print_res=True)
+            tabRes.append(res_mean)
+            tabStd.append(res_std)
+            res_mean_beta_null, res_std_beta_null, res_sem_beta_null = evaluate(obs_test, fitted_params_beta_null, theta_true, p_true, print_res=True)
+            tabRes_beta_null.append(res_mean_beta_null)
+            tabStd_beta_null.append(res_std_beta_null)
+            res_mean_one_epoch, res_std_one_epoch, res_sem_one_epoch = evaluate(obs_test, fitted_params_one_epoch, theta_true, p_true, print_res=True, one_epoch=True)
+            tabRes_one_epoch.append(res_mean_one_epoch)
+            tabStd_one_epoch.append(res_std_one_epoch)
 
-XP1()
+            tabx.append(NobsperI)
+
+        tabRes = np.array(tabRes)
+        tabRes_beta_null = np.array(tabRes_beta_null)
+        tabRes_one_epoch = np.array(tabRes_one_epoch)
+        tabStd = np.array(tabStd)
+        tabStd_beta_null = np.array(tabStd_beta_null)
+        tabStd_one_epoch = np.array(tabStd_one_epoch)
+        
+        for metric in [(0, "AUC ROC"), (4, "RMSE")]:
+            plt.plot(tabx, tabRes[:, metric[0]], "b", label="SDSBM")
+            plt.fill_between(tabx, tabRes[:, metric[0]]-tabStd[:, metric[0]], tabRes[:, metric[0]]+tabStd[:, metric[0]], color="b", alpha=0.3)
+            plt.plot(tabx, tabRes_beta_null[:, metric[0]], "r", label="No coupling")
+            plt.fill_between(tabx, tabRes_beta_null[:, metric[0]]-tabStd_beta_null[:, metric[0]], tabRes_beta_null[:, metric[0]]+tabStd_beta_null[:, metric[0]], color="r", alpha=0.3)
+            plt.plot(tabx, tabRes_one_epoch[:, metric[0]], "g", label="No temporal dependence")
+            plt.fill_between(tabx, tabRes_one_epoch[:, metric[0]]-tabStd_one_epoch[:, metric[0]], tabRes_one_epoch[:, metric[0]]+tabStd_one_epoch[:, metric[0]], color="g", alpha=0.3)
+            plt.xlabel("Number of observations per item")
+            plt.ylabel("AUC ROC")
+            plt.legend()
+            plt.savefig(folderFig+codeSaveFig+metric[1]+".pdf")
+            plt.close()
+
+# Varying Nepochs
+def XP2(folder = "XP/Synth/Nepochs/"):
+    folderFig = folder.replace("XP", "Plots")
+    ensureFolder(folderFig)
+    I = 100
+    K = 3
+    O = 3
+
+    NobsperI = 1000
+    Tmax = 2*np.pi
+    nbLoops = 1000
+    folds = 5
+    res_beta = 40
+
+    for typeVar in ["sin", "rnd"]:
+        tabx = []
+        tabRes, tabRes_beta_null, tabRes_one_epoch = [], [], []
+        tabStd, tabStd_beta_null, tabStd_one_epoch = [], [], []
+        codeSaveFig = f"{typeVar}_"
+        for Nepochs_div in reversed([1, 5, 10, 20, 30, 40, 50, 75, 100]):  # = Nobs moyen par epoque
+            Nepochs = int(NobsperI/Nepochs_div)
+            codeSave = f"{typeVar}_Nepochs={Nepochs}_"
+            print(codeSave)
+            obs_train, obs_validation, obs_test, indt_to_time = getData(folder, codeSave)
+            theta_true, p_true = getTrueParams(folder, codeSave)
+
+            fitted_params = getParams(folder, codeSave, folds)
+            fitted_params_beta_null = getParams(folder, codeSave+"beta_null_", folds)
+            fitted_params_one_epoch = getParams(folder, codeSave+"one_epoch_", folds)
+
+            res_mean, res_std, res_sem = evaluate(obs_test, fitted_params, theta_true, p_true, print_res=True)
+            tabRes.append(res_mean)
+            tabStd.append(res_std)
+            res_mean_beta_null, res_std_beta_null, res_sem_beta_null = evaluate(obs_test, fitted_params_beta_null, theta_true, p_true, print_res=True)
+            tabRes_beta_null.append(res_mean_beta_null)
+            tabStd_beta_null.append(res_std_beta_null)
+            res_mean_one_epoch, res_std_one_epoch, res_sem_one_epoch = evaluate(obs_test, fitted_params_one_epoch, theta_true, p_true, print_res=True, one_epoch=True)
+            tabRes_one_epoch.append(res_mean_one_epoch)
+            tabStd_one_epoch.append(res_std_one_epoch)
+
+            tabx.append(Nepochs)
+
+        tabRes = np.array(tabRes)
+        tabRes_beta_null = np.array(tabRes_beta_null)
+        tabRes_one_epoch = np.array(tabRes_one_epoch)
+        tabStd = np.array(tabStd)
+        tabStd_beta_null = np.array(tabStd_beta_null)
+        tabStd_one_epoch = np.array(tabStd_one_epoch)
+
+        for metric in [(0, "AUC ROC"), (4, "RMSE")]:
+            plt.plot(tabx, tabRes[:, metric[0]], "b", label="SDSBM")
+            plt.fill_between(tabx, tabRes[:, metric[0]]-tabStd[:, metric[0]], tabRes[:, metric[0]]+tabStd[:, metric[0]], color="b", alpha=0.3)
+            plt.plot(tabx, tabRes_beta_null[:, metric[0]], "r", label="No coupling")
+            plt.fill_between(tabx, tabRes_beta_null[:, metric[0]]-tabStd_beta_null[:, metric[0]], tabRes_beta_null[:, metric[0]]+tabStd_beta_null[:, metric[0]], color="r", alpha=0.3)
+            plt.plot(tabx, tabRes_one_epoch[:, metric[0]], "g", label="No temporal dependence")
+            plt.fill_between(tabx, tabRes_one_epoch[:, metric[0]]-tabStd_one_epoch[:, metric[0]], tabRes_one_epoch[:, metric[0]]+tabStd_one_epoch[:, metric[0]], color="g", alpha=0.3)
+            plt.xlabel("Number of epochs")
+            plt.ylabel("AUC ROC")
+            plt.legend()
+            plt.savefig(folderFig+codeSaveFig+metric[1]+".pdf")
+            plt.close()
+
+# Varying p
+def XP3(folder = "XP/Synth/VarP/"):
+    folderFig = folder.replace("XP", "Plots")
+    ensureFolder(folderFig)
+    I = 100
+    K = 3
+    O = 3
+
+    NobsperI = 1000
+    Nepochs = 100
+    Tmax = 2*np.pi
+    nbLoops = 1000
+    folds = 5
+    res_beta = 40
+
+    for typeVar in ["sin", "rnd"]:
+        for infer_p in [True, False]:
+            tabx = []
+            tabRes, tabRes_beta_null, tabRes_one_epoch = [], [], []
+            tabStd, tabStd_beta_null, tabStd_one_epoch = [], [], []
+            codeSaveFig = f"{typeVar}_inferp={infer_p}_"
+            for shiftp in np.linspace(0, 0.5, 21):
+                codeSave = f"{typeVar}_shiftp={round(shiftp, 4)}_inferp={infer_p}_"
+                print(codeSave)
+                obs_train, obs_validation, obs_test, indt_to_time = getData(folder, codeSave)
+                theta_true, p_true = getTrueParams(folder, codeSave)
+
+                fitted_params = getParams(folder, codeSave, folds)
+                fitted_params_beta_null = getParams(folder, codeSave+"beta_null_", folds)
+                fitted_params_one_epoch = getParams(folder, codeSave+"one_epoch_", folds)
+
+                res_mean, res_std, res_sem = evaluate(obs_test, fitted_params, theta_true, p_true, print_res=True)
+                tabRes.append(res_mean)
+                tabStd.append(res_std)
+                res_mean_beta_null, res_std_beta_null, res_sem_beta_null = evaluate(obs_test, fitted_params_beta_null, theta_true, p_true, print_res=True)
+                tabRes_beta_null.append(res_mean_beta_null)
+                tabStd_beta_null.append(res_std_beta_null)
+                res_mean_one_epoch, res_std_one_epoch, res_sem_one_epoch = evaluate(obs_test, fitted_params_one_epoch, theta_true, p_true, print_res=True, one_epoch=True)
+                tabRes_one_epoch.append(res_mean_one_epoch)
+                tabStd_one_epoch.append(res_std_one_epoch)
+
+                tabx.append(NobsperI)
+
+            tabRes = np.array(tabRes)
+            tabRes_beta_null = np.array(tabRes_beta_null)
+            tabRes_one_epoch = np.array(tabRes_one_epoch)
+            tabStd = np.array(tabStd)
+            tabStd_beta_null = np.array(tabStd_beta_null)
+            tabStd_one_epoch = np.array(tabStd_one_epoch)
+
+            for metric in [(0, "AUC ROC"), (4, "RMSE")]:
+                plt.plot(tabx, tabRes[:, metric[0]], "b", label="SDSBM")
+                plt.fill_between(tabx, tabRes[:, metric[0]]-tabStd[:, metric[0]], tabRes[:, metric[0]]+tabStd[:, metric[0]], color="b", alpha=0.3)
+                plt.plot(tabx, tabRes_beta_null[:, metric[0]], "r", label="No coupling")
+                plt.fill_between(tabx, tabRes_beta_null[:, metric[0]]-tabStd_beta_null[:, metric[0]], tabRes_beta_null[:, metric[0]]+tabStd_beta_null[:, metric[0]], color="r", alpha=0.3)
+                plt.plot(tabx, tabRes_one_epoch[:, metric[0]], "g", label="No temporal dependence")
+                plt.fill_between(tabx, tabRes_one_epoch[:, metric[0]]-tabStd_one_epoch[:, metric[0]], tabRes_one_epoch[:, metric[0]]+tabStd_one_epoch[:, metric[0]], color="g", alpha=0.3)
+                plt.xlabel("Number of epochs")
+                plt.ylabel("AUC ROC")
+                plt.legend()
+                plt.savefig(folderFig+codeSaveFig+metric[1]+".pdf")
+                plt.close()
+
+# Real world XP
+def XP4(folder="XP/RW/", ds="lastfm"):
+    curfol = "./"
+    for fol in (folder+ds+"/").split("/"):
+        if fol not in os.listdir(curfol) and fol!="":
+            os.mkdir(curfol+fol)
+        curfol += fol+"/"
+
+    folds = 5
+    codeSave = ds+"_"
+    nbLoops = 1000
+    log_beta_bb=(-1, 2)
+    res_beta = 10
+    if "epigraphy" in ds:
+        res_beta = 100
+
+
+    obs, indt_to_time = getDataRW(folder, ds)
+    obs_train, obs_validation, obs_test, indt_to_time = getData(folder, codeSave)
+    obs_train, obs_validation, obs_test = splitDS(obs, folds)
+    saveData(folder+f"{ds}/", codeSave, obs_train, obs_validation, obs_test, indt_to_time)
+
+    for K in [5, 10, 20, 30]:
+        tic = time.time()
+        fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, log_beta_bb=log_beta_bb, res_beta=res_beta, use_p_true=False, printProg=True, rw=True)
+        saveParams(folder+f"{ds}/", codeSave+f"{K}_", fitted_params)
+        fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=False, printProg=True, rw=True)
+        saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"beta_null_", fitted_params)
+        fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=False, printProg=True, rw=True)
+        saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"one_epoch_", fitted_params)
+        print(f"K={K} - {np.round((time.time()-tic)/(3600), 2)}h elapsed =====================================")
+
+
+XP3()
