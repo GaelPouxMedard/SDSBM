@@ -551,10 +551,8 @@ def alluvialPlot():
         ))])
 
     fig.update_layout(title_text="Status geographic evolution from latin graves (100BC - 500AC)", font_size=13, font_family="Serif", font_color="black")
-    fig.write_image("Status.pdf", height=1080, width=1920, scale=2)
-    fig.show()
-
-    pause()
+    fig.write_image("Plots/RW/Status.pdf", height=1080, width=1920, scale=2)
+    #fig.show()
 
 
 
