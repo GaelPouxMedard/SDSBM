@@ -354,13 +354,13 @@ def XP4_allK(folder_base="XP/RW/"):
             fitted_params_beta_null = getParams(folder, codeSave+f"{K}_"+"beta_null_", folds)
             fitted_params_one_epoch = getParams(folder, codeSave+f"{K}_"+"one_epoch_", folds)
 
-            res_mean, res_std, res_sem = evaluate(obs_test, fitted_params, print_res=True)
+            res_mean, res_std, res_sem = evaluate(obs_test, fitted_params, print_res=True, F1_res=50)
             tabRes.append(res_mean)
             tabStd.append(res_std)
-            res_mean_beta_null, res_std_beta_null, res_sem_beta_null = evaluate(obs_test, fitted_params_beta_null, print_res=True)
+            res_mean_beta_null, res_std_beta_null, res_sem_beta_null = evaluate(obs_test, fitted_params_beta_null, print_res=True, F1_res=50)
             tabRes_beta_null.append(res_mean_beta_null)
             tabStd_beta_null.append(res_std_beta_null)
-            res_mean_one_epoch, res_std_one_epoch, res_sem_one_epoch = evaluate(obs_test, fitted_params_one_epoch, print_res=True, one_epoch=True)
+            res_mean_one_epoch, res_std_one_epoch, res_sem_one_epoch = evaluate(obs_test, fitted_params_one_epoch, print_res=True, one_epoch=True, F1_res=50)
             tabRes_one_epoch.append(res_mean_one_epoch)
             tabStd_one_epoch.append(res_std_one_epoch)
 
@@ -558,6 +558,9 @@ def alluvialPlot():
 
 
 
-
+XP1()
+XP2()
+XP3()
+XP4_allK()
 
 alluvialPlot()
