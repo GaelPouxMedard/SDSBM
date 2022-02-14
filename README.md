@@ -1,1 +1,0 @@
-Simple Dynamical SBM -- The apple does not fall far from the tree
