@@ -389,7 +389,7 @@ def XP4_allK(folder_base="XP/RW/"):
 def alluvialPlot():
 
     import plotly
-    colors_plotly = plotly.colors.DEFAULT_PLOTLY_COLORS
+    from matplotlib.colors import to_rgba
 
     listDs = [
         "epigraphy",
@@ -406,12 +406,14 @@ def alluvialPlot():
     ds = "epigraphy"
     K = 5
     folds = 5
-    fold = 1
+    fold = 0
 
     folder = folder_base+ds+"/"
     folderFig = folder.replace("XP", "Plots")
     ensureFolder(folderFig+"/")
     codeSave = ds+"_"
+
+
 
     fitted_params = getParams(folder, codeSave+f"{K}_", folds)
 
@@ -426,6 +428,12 @@ def alluvialPlot():
     I = len(theta[0])
     K = len(p)
 
+    obs_train, obs_validation, obs_test, indt_to_time = getData(folder+"/", codeSave)
+    weigthI = np.zeros((I))
+    for (i,o,indt) in obs_train[fold]:
+        weigthI[i] += 1
+    print(weigthI)
+
     for k in range(len(p)):
         print(k, "=======")
         for val, o in reversed(sorted(zip(list(p[k]), list(range(len(p[k])))))):
@@ -433,30 +441,49 @@ def alluvialPlot():
                 print(val, ind_to_region[o])
 
     nomsClusters = ["Rome", "Italia", "Illyria, Hispania, Gauls", "Eastern Europe", "Germany, Asia"]
-    labels = []
 
     c_items = []
+    c_links = []
     groups = []
-    opacity = 0.5
+    opacity = 0.6
+    opacity_nodes = 0.9
+    thresPlot = 400
+    colors = ["orange","y", 'navy', "darkgreen", "darkred", ]
+    colors = ["orange","yellow", 'b', "g", "red", ]
+
+    c_clus = ["rgba"+str(to_rgba("lightgray", opacity_nodes)) for k in range(K)]
+    print(c_clus)
+    toRem = []
     for i in range(I):
-        k = np.argmax(np.mean(theta[:, i], axis=0))
-        c = colors_plotly[-k][:-1].replace("rgb", "rgba")+f", {opacity})"
-        c_items.append(c)
+        k=-1
+        if "servi" in ind_to_title[i]: k=0
+        if "liberti" in ind_to_title[i]: k=1
+        if "milit" in ind_to_title[i]: k=2
+        if "senatorius" in ind_to_title[i]: k=3
+        if "augusti" in ind_to_title[i]: k=4
+        if k==-1: toRem.append(i)
+
+        #k = np.argmax(np.mean(theta[:, i], axis=0))
+        c = to_rgba(colors[k], opacity)
+        c_links.append("rgba"+str(c))
+        c = to_rgba(colors[k], opacity_nodes)
+        c_items.append("rgba"+str(c))
         groups.append(k)
 
-    c_clus = [colors_plotly[k][:-1].replace("rgb", "rgba")+f", {opacity})" for k in range(K)]
 
     labels = [ind_to_title[i].replace("_", " ").capitalize() for i in range(len(theta[0]))]+[fr"{nomsClusters[k]} · year {tmin}" for k in range(K)]
-    color_nodes = [c_items[i].replace(f", {opacity}", ", 1.") for i in range(len(theta[0]))]+[c_clus[k].replace(f", {opacity}", ", 1.") for k in range(K)]
+    color_nodes = [c_items[i] for i in range(len(theta[0]))]+[c_clus[k] for k in range(K)]
     print(labels)
     source, target, value = [], [], []
     color = []
     for i in range(I):
+        if i in toRem: continue
         for k in range(K):
-            source.append(i)
-            target.append(I+k)
-            value.append(theta[0,i,k])
-            color.append(c_items[i])
+            if theta[0,i,k]*weigthI[i]>thresPlot:
+                source.append(i)
+                target.append(I+k)
+                value.append(theta[0,i,k]*weigthI[i])
+                color.append(c_links[i])
 
     indt = 0
     tetPrec = theta[0]
@@ -464,9 +491,10 @@ def alluvialPlot():
         if t%100!=0:
             continue
         labels += [fr"{nomsClusters[k]} · year {tmin+t}" for k in range(K)]
-        color_nodes += [c_clus[k].replace(f", {opacity}", ", 1.") for k in range(K)]
+        color_nodes += [c_clus[k] for k in range(K)]
         trans = np.zeros((K,K))
         for i in range(I):
+            if i in toRem: continue
             trans = np.zeros((K,K))
             loss = theta[t,i]-tetPrec[i]  # k
             for k in range(K):
@@ -486,33 +514,25 @@ def alluvialPlot():
 
             for k1 in range(K):
                 for k2 in range(K):
-                    source.append(I+K*(indt)+k1)
-                    target.append(I+K*(indt+1)+k2)
-                    value.append(trans[k1,k2])
-                    color.append(c_items[i])
-
-
-        print(np.sum(trans))
-
-        # for k1 in range(K):
-        #     for k2 in range(K):
-        #         source.append(I+K*(indt)+k1)
-        #         target.append(I+K*(indt+1)+k2)
-        #         value.append(trans[k1,k2])
-        #         color.append(c_clus[k1])
+                    if trans[k1,k2]*weigthI[i]>thresPlot:
+                        source.append(I+K*(indt)+k1)
+                        target.append(I+K*(indt+1)+k2)
+                        value.append(trans[k1,k2]*weigthI[i])
+                        color.append(c_links[i])
 
         tetPrec = theta[t]
         indt += 1
 
     labels += [ind_to_title[i].replace("_", " ").capitalize()+" " for i in range(len(theta[0]))]
-    color_nodes += [c_items[i].replace(f", {opacity}", ", 1.") for i in range(len(theta[0]))]
+    color_nodes += [c_items[i] for i in range(len(theta[0]))]
     for i in range(I):
+        if i in toRem: continue
         for k in range(K):
-            print(labels[I+K*(indt)+k], labels[I+K*(indt+1)+i])
-            source.append(I+K*(indt)+k)
-            target.append(I+K*(indt+1)+i)
-            value.append(tetPrec[i,k])
-            color.append(c_items[i])
+            if tetPrec[i,k]*weigthI[i]>thresPlot:
+                source.append(I+K*(indt)+k)
+                target.append(I+K*(indt+1)+i)
+                value.append(tetPrec[i,k]*weigthI[i])
+                color.append(c_links[i])
 
     import plotly.graph_objects as go
     fig = go.Figure(data=[go.Sankey(
@@ -527,11 +547,11 @@ def alluvialPlot():
             source = source, # indices correspond to labels, eg A1, A2, A1, B1, ...
             target = target,
             value = value,
-            color=color,
+            color = color,
         ))])
 
-    fig.update_layout(title_text="Status geographic evolution from latin graves (100BC - 500AC)", font_size=10)
-    fig.write_image("Status.pdf")
+    fig.update_layout(title_text="Status geographic evolution from latin graves (100BC - 500AC)", font_size=13, font_family="Serif", font_color="black")
+    fig.write_image("Status.pdf", height=1080, width=1920, scale=2)
     fig.show()
 
     pause()
