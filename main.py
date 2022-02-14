@@ -420,19 +420,19 @@ def XP3(folder = "XP/Synth/VarP/"):
         for shiftp in np.linspace(0, 0.5, 21):
             obs, theta_true, p_true, indt_to_time = getData(I,O,K,Nepochs, NobsperI, Tmax, typeVar=typeVar, shiftp=shiftp)
             obs_train, obs_validation, obs_test = splitDS(obs, folds)
-            for infer_p in [True, False]:
-                codeSave = f"{typeVar}_shiftp={round(shiftp, 4)}_inferp={infer_p}_"
+            for use_p_true in [True, False]:
+                codeSave = f"{typeVar}_shiftp={round(shiftp, 4)}_inferp={use_p_true}_"
 
                 print(codeSave)
 
                 saveData(folder, codeSave, obs_train, obs_validation, obs_test, indt_to_time)
                 saveTrueParams(folder, codeSave, theta_true, p_true)
 
-                fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, use_p_true=infer_p, p_true=p_true, printProg=False)
+                fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, log_beta_bb=(-2, 3), res_beta=res_beta, use_p_true=use_p_true, p_true=p_true, printProg=False)
                 saveParams(folder, codeSave, fitted_params)
-                fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=infer_p, p_true=p_true, printProg=False)
+                fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=use_p_true, p_true=p_true, printProg=False)
                 saveParams(folder, codeSave+"beta_null_", fitted_params)
-                fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=infer_p, p_true=p_true, printProg=False)
+                fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=use_p_true, p_true=p_true, printProg=False)
                 saveParams(folder, codeSave+"one_epoch_", fitted_params)
 
 # Real world XP

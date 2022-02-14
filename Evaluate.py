@@ -160,7 +160,9 @@ def XP1(folder = "XP/Synth/NobsperI/"):
             plt.plot(tabx, tabRes_one_epoch[:, metric[0]], "g", label="No temporal dependence")
             plt.fill_between(tabx, tabRes_one_epoch[:, metric[0]]-tabStd_one_epoch[:, metric[0]], tabRes_one_epoch[:, metric[0]]+tabStd_one_epoch[:, metric[0]], color="g", alpha=0.3)
             plt.xlabel("Number of observations per item")
-            plt.ylabel("AUC ROC")
+            plt.ylabel(metric[1])
+            if metric[1]=="RMSE": plt.ylim([0, 0.45])
+            if metric[1]=="AUC ROC": plt.ylim([0.5, 0.85])
             plt.legend()
             plt.savefig(folderFig+codeSaveFig+metric[1]+".pdf")
             plt.close()
@@ -222,7 +224,9 @@ def XP2(folder = "XP/Synth/Nepochs/"):
             plt.plot(tabx, tabRes_one_epoch[:, metric[0]], "g", label="No temporal dependence")
             plt.fill_between(tabx, tabRes_one_epoch[:, metric[0]]-tabStd_one_epoch[:, metric[0]], tabRes_one_epoch[:, metric[0]]+tabStd_one_epoch[:, metric[0]], color="g", alpha=0.3)
             plt.xlabel("Number of epochs")
-            plt.ylabel("AUC ROC")
+            plt.ylabel(metric[1])
+            if metric[1]=="RMSE": plt.ylim([0, 0.45])
+            if metric[1]=="AUC ROC": plt.ylim([0.5, 0.85])
             plt.legend()
             plt.savefig(folderFig+codeSaveFig+metric[1]+".pdf")
             plt.close()
@@ -243,13 +247,13 @@ def XP3(folder = "XP/Synth/VarP/"):
     res_beta = 40
 
     for typeVar in ["sin", "rnd"]:
-        for infer_p in [True, False]:
+        for use_p_true in [True, False]:
             tabx = []
             tabRes, tabRes_beta_null, tabRes_one_epoch = [], [], []
             tabStd, tabStd_beta_null, tabStd_one_epoch = [], [], []
-            codeSaveFig = f"{typeVar}_inferp={infer_p}_"
+            codeSaveFig = f"{typeVar}_inferp={use_p_true}_"
             for shiftp in np.linspace(0, 0.5, 21):
-                codeSave = f"{typeVar}_shiftp={round(shiftp, 4)}_inferp={infer_p}_"
+                codeSave = f"{typeVar}_shiftp={round(shiftp, 4)}_inferp={use_p_true}_"
                 print(codeSave)
                 obs_train, obs_validation, obs_test, indt_to_time = getData(folder, codeSave)
                 theta_true, p_true = getTrueParams(folder, codeSave)
@@ -268,7 +272,8 @@ def XP3(folder = "XP/Synth/VarP/"):
                 tabRes_one_epoch.append(res_mean_one_epoch)
                 tabStd_one_epoch.append(res_std_one_epoch)
 
-                tabx.append(NobsperI)
+                entropy_p = np.mean(np.sum(-p_true*np.log(p_true+1e-20), axis=1))
+                tabx.append(entropy_p)
 
             tabRes = np.array(tabRes)
             tabRes_beta_null = np.array(tabRes_beta_null)
@@ -284,43 +289,52 @@ def XP3(folder = "XP/Synth/VarP/"):
                 plt.fill_between(tabx, tabRes_beta_null[:, metric[0]]-tabStd_beta_null[:, metric[0]], tabRes_beta_null[:, metric[0]]+tabStd_beta_null[:, metric[0]], color="r", alpha=0.3)
                 plt.plot(tabx, tabRes_one_epoch[:, metric[0]], "g", label="No temporal dependence")
                 plt.fill_between(tabx, tabRes_one_epoch[:, metric[0]]-tabStd_one_epoch[:, metric[0]], tabRes_one_epoch[:, metric[0]]+tabStd_one_epoch[:, metric[0]], color="g", alpha=0.3)
-                plt.xlabel("Number of epochs")
-                plt.ylabel("AUC ROC")
+                plt.xlabel(r"Entropy of $p$")
+                plt.ylabel(metric[1])
+                if metric[1]=="RMSE": plt.ylim([0, 0.45])
+                if metric[1]=="AUC ROC": plt.ylim([0.5, 0.85])
                 plt.legend()
                 plt.savefig(folderFig+codeSaveFig+metric[1]+".pdf")
                 plt.close()
 
 # Real world XP
 def XP4(folder="XP/RW/", ds="lastfm"):
-    curfol = "./"
-    for fol in (folder+ds+"/").split("/"):
-        if fol not in os.listdir(curfol) and fol!="":
-            os.mkdir(curfol+fol)
-        curfol += fol+"/"
 
-    folds = 5
-    codeSave = ds+"_"
-    nbLoops = 1000
-    log_beta_bb=(-1, 2)
-    res_beta = 10
-    if "epigraphy" in ds:
-        res_beta = 100
+    listDs = ["epigraphy",
+              "epigraphy_alt",
+              "lastfm",
+              "lastfm_alt",
+              "wikipedia",
+              "wikipedia_alt",
+              "reddit",
+              "reddit_alt",
+              ]
+
+    for ds in listDs:
+        ensureFolder(folder+ds+"/")
+
+        folds = 5
+        codeSave = ds+"_"
+        nbLoops = 1000
+        log_beta_bb=(-1, 2)
+        res_beta = 10
+        if "epigraphy" in ds:
+            res_beta = 100
 
 
-    obs, indt_to_time = getDataRW(folder, ds)
-    obs_train, obs_validation, obs_test, indt_to_time = getData(folder, codeSave)
-    obs_train, obs_validation, obs_test = splitDS(obs, folds)
-    saveData(folder+f"{ds}/", codeSave, obs_train, obs_validation, obs_test, indt_to_time)
+        obs, indt_to_time = getDataRW(folder, ds)
+        obs_train, obs_validation, obs_test = splitDS(obs, folds)
+        saveData(folder+f"{ds}/", codeSave, obs_train, obs_validation, obs_test, indt_to_time)
 
-    for K in [5, 10, 20, 30]:
-        tic = time.time()
-        fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, log_beta_bb=log_beta_bb, res_beta=res_beta, use_p_true=False, printProg=True, rw=True)
-        saveParams(folder+f"{ds}/", codeSave+f"{K}_", fitted_params)
-        fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=False, printProg=True, rw=True)
-        saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"beta_null_", fitted_params)
-        fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=False, printProg=True, rw=True)
-        saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"one_epoch_", fitted_params)
-        print(f"K={K} - {np.round((time.time()-tic)/(3600), 2)}h elapsed =====================================")
+        for K in [5, 10, 20, 30]:
+            tic = time.time()
+            fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, log_beta_bb=log_beta_bb, res_beta=res_beta, use_p_true=False, printProg=True, rw=True)
+            saveParams(folder+f"{ds}/", codeSave+f"{K}_", fitted_params)
+            fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, set_beta_null=True, use_p_true=False, printProg=True, rw=True)
+            saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"beta_null_", fitted_params)
+            fitted_params = run(copy(obs_train), copy(obs_validation), K, indt_to_time, nbLoops=nbLoops, one_epoch=True, use_p_true=False, printProg=True, rw=True)
+            saveParams(folder+f"{ds}/", codeSave+f"{K}_"+"one_epoch_", fitted_params)
+            print(f"K={K} - {np.round((time.time()-tic)/(3600), 2)}h elapsed =====================================")
 
 
 XP3()
