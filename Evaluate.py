@@ -314,18 +314,21 @@ def XP3(folder = "XP/Synth/VarP/"):
                 plt.close()
 
 # Real world XP for every K
-def XP4_allK(folder_base="XP/RW/"):
+def XP4_allK(folder_base="XP/RW/", ds=None):
 
-    listDs = [
-                "epigraphy_alt",
-                "lastfm",
-                "lastfm_alt",
-                "wikipedia",
-                "wikipedia_alt",
-                "reddit",
-                "reddit_alt",
-                "epigraphy",
-              ]
+    if ds is None:
+        listDs = [
+                    "epigraphy_alt",
+                    "lastfm",
+                    "lastfm_alt",
+                    "wikipedia",
+                    "wikipedia_alt",
+                    "reddit",
+                    "reddit_alt",
+                    "epigraphy",
+                  ]
+    else:
+        listDs = [ds]
 
 
     for ds in listDs:
@@ -555,10 +558,12 @@ def alluvialPlot():
     #fig.show()
 
 
-
-XP1()
-XP2()
-XP3()
-XP4_allK()
+XP = input("What to evaluate > ")
+if XP=="123":
+    XP1()
+    XP2()
+    XP3()
+else:
+    XP4_allK(ds=XP)
 
 alluvialPlot()
