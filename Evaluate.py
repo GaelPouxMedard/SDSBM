@@ -339,11 +339,6 @@ def XP4_allK(folder_base="XP/RW/", ds=None):
 
         folds = 5
         codeSave = ds+"_"
-        nbLoops = 1000
-        log_beta_bb=(-1, 2)
-        res_beta = 10
-        if "epigraphy" in ds:
-            res_beta = 100
 
 
         obs_train, obs_validation, obs_test, indt_to_time = getData(folder+"/", codeSave)
@@ -351,6 +346,7 @@ def XP4_allK(folder_base="XP/RW/", ds=None):
         tabx = []
         tabRes, tabRes_beta_null, tabRes_one_epoch = [], [], []
         tabStd, tabStd_beta_null, tabStd_one_epoch = [], [], []
+        tabSem, tabSem_beta_null, tabSem_one_epoch = [], [], []
         codeSaveFig = f"_"
         for K in [5, 10, 20, 30]:
             fitted_params = getParams(folder, codeSave+f"{K}_", folds)
@@ -360,12 +356,15 @@ def XP4_allK(folder_base="XP/RW/", ds=None):
             res_mean, res_std, res_sem = evaluate(obs_test, fitted_params, print_res=True, F1_res=50)
             tabRes.append(res_mean)
             tabStd.append(res_std)
+            tabSem.append(res_sem)
             res_mean_beta_null, res_std_beta_null, res_sem_beta_null = evaluate(obs_test, fitted_params_beta_null, print_res=True, F1_res=50)
             tabRes_beta_null.append(res_mean_beta_null)
             tabStd_beta_null.append(res_std_beta_null)
+            tabSem_beta_null.append(res_sem_beta_null)
             res_mean_one_epoch, res_std_one_epoch, res_sem_one_epoch = evaluate(obs_test, fitted_params_one_epoch, print_res=True, one_epoch=True, F1_res=50)
             tabRes_one_epoch.append(res_mean_one_epoch)
             tabStd_one_epoch.append(res_std_one_epoch)
+            tabSem_one_epoch.append(res_sem_one_epoch)
 
             tabx.append(K)
 
@@ -375,6 +374,9 @@ def XP4_allK(folder_base="XP/RW/", ds=None):
         tabStd = np.array(tabStd)
         tabStd_beta_null = np.array(tabStd_beta_null)
         tabStd_one_epoch = np.array(tabStd_one_epoch)
+        tabSem = np.array(tabSem)
+        tabSem_beta_null = np.array(tabSem_beta_null)
+        tabSem_one_epoch = np.array(tabSem_one_epoch)
 
         for metric in [(0, "AUC ROC"), (1, "F1 score"), (2, "Average precision"), (5, "Rank average precision"), (6, "Normalized coverage error")]:
             plt.plot(tabx, tabRes[:, metric[0]], "b", label="SDSBM")
@@ -388,6 +390,18 @@ def XP4_allK(folder_base="XP/RW/", ds=None):
             plt.legend()
             plt.savefig(folderFig+codeSaveFig+metric[1]+"_vs_K.pdf")
             plt.close()
+
+
+        allRes = (tabRes, tabStd, tabSem)
+        allRes_beta_null = (tabRes_beta_null, tabStd_beta_null, tabSem_beta_null)
+        allRes_one_epoch = (tabRes_one_epoch, tabStd_one_epoch, tabSem_one_epoch)
+
+        with open(folderFig+f"allK_results.pkl", "wb+") as f:
+            pickle.dump(allRes, f)
+        with open(folderFig+f"allK_results_beta_null.pkl", "wb+") as f:
+            pickle.dump(allRes_beta_null, f)
+        with open(folderFig+f"allK_results_one_epoch.pkl", "wb+") as f:
+            pickle.dump(allRes_one_epoch, f)
 
 def XP4_selectedK(folder_base="XP/RW/"):
     listDs = [
