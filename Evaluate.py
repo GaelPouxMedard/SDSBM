@@ -674,10 +674,6 @@ def IllustrationMethod(folder = "XP/Synth/Nepochs/"):
 
 
 
-IllustrationMethod()
-pause()
-
-
 XP = input("What to evaluate > ")
 if XP=="123":
     XP1()
@@ -685,6 +681,11 @@ if XP=="123":
     XP3()
 else:
     XP4_allK(ds=XP)
+
+IllustrationMethod()
+pause()
+
+
 pause()
 
 XP4_selectedK()
