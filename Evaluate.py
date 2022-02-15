@@ -413,46 +413,38 @@ def XP4_allK(folder_base="XP/RW/", ds=None):
         with open(folderFig+f"allK_results_one_epoch.pkl", "wb+") as f:
             pickle.dump(allRes_one_epoch, f)
 
-# Real world XP for one selected K
-def XP4_selectedK(folder_base="XP/RW/"):
+
+def generateLatexTable(folder_base="XP/RW/"):
     listDs = [
         ("epigraphy", 20),
-        ("epigraphy_alt", 20),
-        ("wikipedia", 30),
-        ("wikipedia_alt", 30),
-        ("reddit", 20),
-        ("reddit_alt", 20),
+        # ("epigraphy_alt", 20),
+        # ("wikipedia", 30),
+        # ("wikipedia_alt", 30),
+        # ("reddit", 20),
+        # ("reddit_alt", 20),
     ]
 
-    for ds, K in listDs:
+    metrics = [
+        (0, "AUC ROC"),
+        (2, "AP"),
+        (5, "RAP"),
+        (6, "NCE"),
+    ]
+
+    for (ds, K) in listDs:
         print(ds)
         folder = folder_base+ds+"/"
         folderFig = folder.replace("XP", "Plots")
         ensureFolder(folderFig+"/")
 
-        folds = 5
-        codeSave = ds+"_"
+        with open(folderFig+f"allK_results.pkl", "rb") as f:
+            allRes = pickle.load(f)
+        with open(folderFig+f"allK_results_beta_null.pkl", "rb") as f:
+            allRes_beta_null = pickle.load(f)
+        with open(folderFig+f"allK_results_one_epoch.pkl", "rb") as f:
+            allRes_one_epoch = pickle.load(f)
 
-        obs_train, obs_validation, obs_test, indt_to_time = getData(folder+"/", codeSave)
-
-        fitted_params = getParams(folder, codeSave+f"{K}_", folds)
-        fitted_params_beta_null = getParams(folder, codeSave+f"{K}_"+"beta_null_", folds)
-        fitted_params_one_epoch = getParams(folder, codeSave+f"{K}_"+"one_epoch_", folds)
-
-        res_mean, res_std, res_sem = evaluate(obs_test, fitted_params, print_res=True, F1_res=50)
-        res_mean_beta_null, res_std_beta_null, res_sem_beta_null = evaluate(obs_test, fitted_params_beta_null, print_res=True, F1_res=50)
-        res_mean_one_epoch, res_std_one_epoch, res_sem_one_epoch = evaluate(obs_test, fitted_params_one_epoch, print_res=True, one_epoch=True, F1_res=50)
-
-        allRes = (res_mean, res_std, res_sem)
-        allRes_beta_null = (res_mean_beta_null, res_std_beta_null, res_sem_beta_null)
-        allRes_one_epoch = (res_mean_one_epoch, res_std_one_epoch, res_sem_one_epoch)
-
-        with open(folderFig+f"K={K}_results.pkl", "wb+") as f:
-            pickle.dump(allRes, f)
-        with open(folderFig+f"K={K}_results_beta_null.pkl", "wb+") as f:
-            pickle.dump(allRes_beta_null, f)
-        with open(folderFig+f"K={K}_results_one_epoch.pkl", "wb+") as f:
-            pickle.dump(allRes_one_epoch, f)
+        print(allRes)
 
 def alluvialPlot():
 
@@ -635,8 +627,8 @@ def IllustrationMethod(folder = "XP/Synth/Nepochs/"):
     folds = 5
     res_beta = 40
 
-    scale=8
-    plt.figure(figsize=(0.60*scale, 0.75*scale))
+    scale=12
+    plt.figure(figsize=(0.60*scale, 0.4*scale))
     for type_i, typeVar in enumerate(["sin", "rnd"]):
         plt.subplot(2,1,type_i+1)
         for Nepochs_div in reversed([5]):  # = Nobs moyen par epoque
@@ -676,6 +668,12 @@ def IllustrationMethod(folder = "XP/Synth/Nepochs/"):
 
 
 
+generateLatexTable()
+pause()
+
+IllustrationMethod()
+pause()
+
 XP = input("What to evaluate > ")
 if XP=="123":
     XP1()
@@ -684,14 +682,10 @@ if XP=="123":
 else:
     XP4_allK(ds=XP)
 
-IllustrationMethod()
-pause()
 
 
 pause()
 
-XP4_selectedK()
-pause()
 
 
 
