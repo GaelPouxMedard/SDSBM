@@ -250,6 +250,7 @@ def XP2(folder = "XP/Synth/Nepochs/"):
             if metric[1]=="RMSE": plt.ylim([0, 0.45])
             if metric[1]=="AUC ROC": plt.ylim([0.5, 0.85])
             plt.legend()
+            plt.tight_layout()
             plt.savefig(folderFig+codeSaveFig+metric[1]+".pdf")
             plt.close()
 
@@ -318,6 +319,7 @@ def XP3(folder = "XP/Synth/VarP/"):
                 if metric[1]=="RMSE": plt.ylim([0, 0.45])
                 if metric[1]=="AUC ROC": plt.ylim([0.5, 0.85])
                 plt.legend()
+                plt.tight_layout()
                 plt.savefig(folderFig+codeSaveFig+metric[1]+".pdf")
                 plt.close()
 
