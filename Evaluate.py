@@ -633,7 +633,7 @@ def IllustrationMethod(folder = "XP/Synth/Nepochs/"):
     folds = 5
     res_beta = 40
 
-    scale=7
+    scale=8
     plt.figure(figsize=(0.60*scale, 0.75*scale))
     for type_i, typeVar in enumerate(["sin", "rnd"]):
         plt.subplot(2,1,type_i+1)
@@ -653,13 +653,13 @@ def IllustrationMethod(folder = "XP/Synth/Nepochs/"):
 
             for k in range(3):
                 if k==0:
-                    plt.plot(fitted_params_beta_null[fold][0][:, i, k], "b-", alpha=0.3, label="Independent time slices")
-                    plt.plot(arrx, [fitted_params_one_epoch[fold][0][:, i, k]]*len(arrx), "y-", label="Static SBM")
+                    plt.plot(fitted_params_beta_null[fold][0][:, i, k], "b-", alpha=0.3, label="Independent time slices SBM")
+                    plt.plot(arrx, [fitted_params_one_epoch[fold][0][:, i, k]]*len(arrx), "g-", label="Static SBM")
                     plt.plot(fitted_params[fold][0][:, i, k], "r-", label="SDSBM")
                     plt.plot(theta_true[:, i, k], "k-", linewidth=2, label="Ground truth")
                 else:
                     plt.plot(fitted_params_beta_null[fold][0][:, i, k], "b-", alpha=0.3)
-                    plt.plot(arrx, [fitted_params_one_epoch[fold][0][:, i, k]]*len(arrx), "y-")
+                    plt.plot(arrx, [fitted_params_one_epoch[fold][0][:, i, k]]*len(arrx), "g-")
                     plt.plot(fitted_params[fold][0][:, i, k], "r-")
                     plt.plot(theta_true[:, i, k], "k-", linewidth=2)
             plt.ylim([-0.05,1.05])
@@ -674,10 +674,7 @@ def IllustrationMethod(folder = "XP/Synth/Nepochs/"):
 
 
 
-XP1()
-XP2()
-XP3()
-
+IllustrationMethod()
 pause()
 
 
@@ -694,7 +691,5 @@ XP4_selectedK()
 pause()
 
 
-IllustrationMethod()
-pause()
 
 alluvialPlot()
