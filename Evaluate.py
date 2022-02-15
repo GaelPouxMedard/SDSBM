@@ -389,6 +389,45 @@ def XP4_allK(folder_base="XP/RW/", ds=None):
             plt.savefig(folderFig+codeSaveFig+metric[1]+"_vs_K.pdf")
             plt.close()
 
+def XP4_selectedK(folder_base="XP/RW/"):
+    listDs = [
+        ("epigraphy", 20),
+        ("epigraphy_alt", 20),
+        ("wikipedia", 30),
+        ("wikipedia_alt", 30),
+        ("reddit", 20),
+        ("reddit_alt", 20),
+    ]
+
+    for ds, K in listDs:
+        print(ds)
+        folder = folder_base+ds+"/"
+        folderFig = folder.replace("XP", "Plots")
+        ensureFolder(folderFig+"/")
+
+        folds = 5
+        codeSave = ds+"_"
+
+        obs_train, obs_validation, obs_test, indt_to_time = getData(folder+"/", codeSave)
+
+        fitted_params = getParams(folder, codeSave+f"{K}_", folds)
+        fitted_params_beta_null = getParams(folder, codeSave+f"{K}_"+"beta_null_", folds)
+        fitted_params_one_epoch = getParams(folder, codeSave+f"{K}_"+"one_epoch_", folds)
+
+        res_mean, res_std, res_sem = evaluate(obs_test, fitted_params, print_res=True, F1_res=50)
+        res_mean_beta_null, res_std_beta_null, res_sem_beta_null = evaluate(obs_test, fitted_params_beta_null, print_res=True, F1_res=50)
+        res_mean_one_epoch, res_std_one_epoch, res_sem_one_epoch = evaluate(obs_test, fitted_params_one_epoch, print_res=True, one_epoch=True, F1_res=50)
+
+        allRes = (res_mean, res_std, res_sem)
+        allRes_beta_null = (res_mean_beta_null, res_std_beta_null, res_sem_beta_null)
+        allRes_one_epoch = (res_mean_one_epoch, res_std_one_epoch, res_sem_one_epoch)
+
+        with open(folderFig+f"K={K}_results.pkl", "wb+") as f:
+            pickle.dump(allRes, f)
+        with open(folderFig+f"K={K}_results_beta_null.pkl", "wb+") as f:
+            pickle.dump(allRes_beta_null, f)
+        with open(folderFig+f"K={K}_results_one_epoch.pkl", "wb+") as f:
+            pickle.dump(allRes_one_epoch, f)
 
 def alluvialPlot():
 
@@ -558,7 +597,6 @@ def alluvialPlot():
     fig.write_image("Plots/RW/Status.pdf", height=1080, width=1920, scale=2)
     #fig.show()
 
-# Varying Nepochs
 def IllustrationMethod(folder = "XP/Synth/Nepochs/"):
     folderFig = folder.replace("XP", "Plots")
     ensureFolder(folderFig)
@@ -612,6 +650,9 @@ def IllustrationMethod(folder = "XP/Synth/Nepochs/"):
     plt.savefig("Plots/Illustration.pdf")
 
 
+
+XP4_selectedK()
+pause()
 
 
 IllustrationMethod()
