@@ -172,9 +172,9 @@ def XP1(folder = "XP/Synth/NobsperI/"):
         for metric in [(0, "AUC ROC"), (4, "RMSE")]:
             scale=3
             plt.figure(figsize=(2*scale,1*scale))
-            plt.plot(tabx, tabRes[:, metric[0]], "b", label="SDSBM")
+            plt.plot(tabx, tabRes[:, metric[0]], "r", label="SDSBM")
             plt.fill_between(tabx, tabRes[:, metric[0]]-tabStd[:, metric[0]], tabRes[:, metric[0]]+tabStd[:, metric[0]], color="b", alpha=0.3)
-            plt.plot(tabx, tabRes_beta_null[:, metric[0]], "r", label="No coupling")
+            plt.plot(tabx, tabRes_beta_null[:, metric[0]], "b", label="No coupling")
             plt.fill_between(tabx, tabRes_beta_null[:, metric[0]]-tabStd_beta_null[:, metric[0]], tabRes_beta_null[:, metric[0]]+tabStd_beta_null[:, metric[0]], color="r", alpha=0.3)
             plt.plot(tabx, tabRes_one_epoch[:, metric[0]], "g", label="No temporal dependence")
             plt.fill_between(tabx, tabRes_one_epoch[:, metric[0]]-tabStd_one_epoch[:, metric[0]], tabRes_one_epoch[:, metric[0]]+tabStd_one_epoch[:, metric[0]], color="g", alpha=0.3)
@@ -239,9 +239,9 @@ def XP2(folder = "XP/Synth/Nepochs/"):
         for metric in [(0, "AUC ROC"), (4, "RMSE")]:
             scale=3
             plt.figure(figsize=(2*scale,1*scale))
-            plt.plot(tabx, tabRes[:, metric[0]], "b", label="SDSBM")
+            plt.plot(tabx, tabRes[:, metric[0]], "r", label="SDSBM")
             plt.fill_between(tabx, tabRes[:, metric[0]]-tabStd[:, metric[0]], tabRes[:, metric[0]]+tabStd[:, metric[0]], color="b", alpha=0.3)
-            plt.plot(tabx, tabRes_beta_null[:, metric[0]], "r", label="No coupling")
+            plt.plot(tabx, tabRes_beta_null[:, metric[0]], "b", label="No coupling")
             plt.fill_between(tabx, tabRes_beta_null[:, metric[0]]-tabStd_beta_null[:, metric[0]], tabRes_beta_null[:, metric[0]]+tabStd_beta_null[:, metric[0]], color="r", alpha=0.3)
             plt.plot(tabx, tabRes_one_epoch[:, metric[0]], "g", label="No temporal dependence")
             plt.fill_between(tabx, tabRes_one_epoch[:, metric[0]]-tabStd_one_epoch[:, metric[0]], tabRes_one_epoch[:, metric[0]]+tabStd_one_epoch[:, metric[0]], color="g", alpha=0.3)
@@ -307,9 +307,9 @@ def XP3(folder = "XP/Synth/VarP/"):
             for metric in [(0, "AUC ROC"), (4, "RMSE")]:
                 scale=3
                 plt.figure(figsize=(2*scale,1*scale))
-                plt.plot(tabx, tabRes[:, metric[0]], "b", label="SDSBM")
+                plt.plot(tabx, tabRes[:, metric[0]], "r", label="SDSBM")
                 plt.fill_between(tabx, tabRes[:, metric[0]]-tabStd[:, metric[0]], tabRes[:, metric[0]]+tabStd[:, metric[0]], color="b", alpha=0.3)
-                plt.plot(tabx, tabRes_beta_null[:, metric[0]], "r", label="No coupling")
+                plt.plot(tabx, tabRes_beta_null[:, metric[0]], "b", label="No coupling")
                 plt.fill_between(tabx, tabRes_beta_null[:, metric[0]]-tabStd_beta_null[:, metric[0]], tabRes_beta_null[:, metric[0]]+tabStd_beta_null[:, metric[0]], color="r", alpha=0.3)
                 plt.plot(tabx, tabRes_one_epoch[:, metric[0]], "g", label="No temporal dependence")
                 plt.fill_between(tabx, tabRes_one_epoch[:, metric[0]]-tabStd_one_epoch[:, metric[0]], tabRes_one_epoch[:, metric[0]]+tabStd_one_epoch[:, metric[0]], color="g", alpha=0.3)
@@ -411,6 +411,7 @@ def XP4_allK(folder_base="XP/RW/", ds=None):
         with open(folderFig+f"allK_results_one_epoch.pkl", "wb+") as f:
             pickle.dump(allRes_one_epoch, f)
 
+# Real world XP for one selected K
 def XP4_selectedK(folder_base="XP/RW/"):
     listDs = [
         ("epigraphy", 20),
