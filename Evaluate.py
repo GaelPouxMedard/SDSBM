@@ -126,6 +126,7 @@ def XP1(folder = "XP/Synth/NobsperI/"):
     K = 3
     O = 3
 
+
     Nepochs = 100
     Tmax = 2*np.pi
     nbLoops = 1000
@@ -160,6 +161,7 @@ def XP1(folder = "XP/Synth/NobsperI/"):
             tabStd_one_epoch.append(res_std_one_epoch)
 
             tabx.append(NobsperI)
+            break
 
         tabRes = np.array(tabRes)
         tabRes_beta_null = np.array(tabRes_beta_null)
@@ -169,6 +171,8 @@ def XP1(folder = "XP/Synth/NobsperI/"):
         tabStd_one_epoch = np.array(tabStd_one_epoch)
         
         for metric in [(0, "AUC ROC"), (4, "RMSE")]:
+            scale=3
+            plt.figure(figsize=(2*scale,1*scale))
             plt.plot(tabx, tabRes[:, metric[0]], "b", label="SDSBM")
             plt.fill_between(tabx, tabRes[:, metric[0]]-tabStd[:, metric[0]], tabRes[:, metric[0]]+tabStd[:, metric[0]], color="b", alpha=0.3)
             plt.plot(tabx, tabRes_beta_null[:, metric[0]], "r", label="No coupling")
@@ -180,8 +184,10 @@ def XP1(folder = "XP/Synth/NobsperI/"):
             if metric[1]=="RMSE": plt.ylim([0, 0.45])
             if metric[1]=="AUC ROC": plt.ylim([0.5, 0.85])
             plt.legend()
+            plt.tight_layout()
             plt.savefig(folderFig+codeSaveFig+metric[1]+".pdf")
             plt.close()
+            pause()
 
 # Varying Nepochs
 def XP2(folder = "XP/Synth/Nepochs/"):
@@ -233,6 +239,8 @@ def XP2(folder = "XP/Synth/Nepochs/"):
         tabStd_one_epoch = np.array(tabStd_one_epoch)
 
         for metric in [(0, "AUC ROC"), (4, "RMSE")]:
+            scale=3
+            plt.figure(figsize=(2*scale,1*scale))
             plt.plot(tabx, tabRes[:, metric[0]], "b", label="SDSBM")
             plt.fill_between(tabx, tabRes[:, metric[0]]-tabStd[:, metric[0]], tabRes[:, metric[0]]+tabStd[:, metric[0]], color="b", alpha=0.3)
             plt.plot(tabx, tabRes_beta_null[:, metric[0]], "r", label="No coupling")
@@ -299,6 +307,8 @@ def XP3(folder = "XP/Synth/VarP/"):
             tabStd_one_epoch = np.array(tabStd_one_epoch)
 
             for metric in [(0, "AUC ROC"), (4, "RMSE")]:
+                scale=3
+                plt.figure(figsize=(2*scale,1*scale))
                 plt.plot(tabx, tabRes[:, metric[0]], "b", label="SDSBM")
                 plt.fill_between(tabx, tabRes[:, metric[0]]-tabStd[:, metric[0]], tabRes[:, metric[0]]+tabStd[:, metric[0]], color="b", alpha=0.3)
                 plt.plot(tabx, tabRes_beta_null[:, metric[0]], "r", label="No coupling")
@@ -663,6 +673,13 @@ def IllustrationMethod(folder = "XP/Synth/Nepochs/"):
     plt.tight_layout()
     plt.savefig("Plots/Illustration.pdf")
 
+
+
+XP1()
+XP2()
+XP3()
+
+pause()
 
 
 XP = input("What to evaluate > ")
