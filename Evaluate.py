@@ -161,7 +161,6 @@ def XP1(folder = "XP/Synth/NobsperI/"):
             tabStd_one_epoch.append(res_std_one_epoch)
 
             tabx.append(NobsperI)
-            break
 
         tabRes = np.array(tabRes)
         tabRes_beta_null = np.array(tabRes_beta_null)
@@ -187,7 +186,6 @@ def XP1(folder = "XP/Synth/NobsperI/"):
             plt.tight_layout()
             plt.savefig(folderFig+codeSaveFig+metric[1]+".pdf")
             plt.close()
-            pause()
 
 # Varying Nepochs
 def XP2(folder = "XP/Synth/Nepochs/"):
