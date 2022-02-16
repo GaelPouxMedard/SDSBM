@@ -5,6 +5,7 @@ import pickle
 from scipy.stats import sem
 import os
 from copy import deepcopy as copy
+import sys
 
 def getData(folder, codeSave):
     with open(folder+codeSave+"obs_train.pkl", "rb") as f:
@@ -417,27 +418,57 @@ def XP4_allK(folder_base="XP/RW/", ds=None):
 def generateLatexTable(folder_base="XP/RW/"):
     listDs = [
         ("epigraphy", 20),
-        # ("epigraphy_alt", 20),
-        # ("lastfm", 30),
-        # ("lastfm_alt", 30),
-        # ("wikipedia", 30),
-        # ("wikipedia_alt", 30),
-        # ("reddit", 20),
-        # ("reddit_alt", 20),
+        #("epigraphy_alt", 20),
+        #("lastfm", 30),
+        ("lastfm_alt", 30),
+        ("wikipedia", 30),
+        #("wikipedia_alt", 30),
+        ("reddit", 20),
+        #("reddit_alt", 20),
     ]
 
     metrics = [
-        (0, "AUC ROC"),
+        (0, "ROC"),
+        #(1, "F1"),
         (2, "AP"),
-        (5, "RAP"),
+        #(5, "RAP"),
         (6, "NCE"),
     ]
 
+    stdsem = 2  # 1 = STD, 2 = SEM
+
+    txt = ""
+    txt+="\\begin{table}\n"
+    txt+="\t\\caption{}\n"
+    txt+="\t\\label{table-res}\n"
+    txt+="\t\\centering\n"
+    txt+="\t\\begin{tabular}{|l|l"+"|S"*(len(metrics)+1)+"}\n"
+    txt+="\t\t\\cline{1-"+f"{len(metrics)+2}"+"}\n"
+    txt+="\t\t& "
+    for metric_index, metric_label in metrics:
+        txt += "& \\text{"+metric_label+"} "
+    txt+="\\\\ \n"
+
     for (ds, K) in listDs:
+        nameDS = ""
+        if "epig" in ds: nameDS="Epi"
+        if "lastfm" in ds: nameDS="LastFm"
+        if "wiki" in ds: nameDS="Wiki"
+        if "redd" in ds: nameDS="Reddit"
+
+        txt+="\n"
+        txt+="\t\t\\cline{1-"+f"{len(metrics)+2}"+"}\n"
+        txt+="\t\t\\multirow{3}{*}{\\rotatebox[origin=c]{90}{\\footnotesize \\text{\\textbf{"+f"{nameDS.replace('_alt', '').capitalize()}"+"}}}}\n"
         print(ds)
         folder = folder_base+ds+"/"
         folderFig = folder.replace("XP", "Plots")
         ensureFolder(folderFig+"/")
+
+        indK=None
+        if K==5: indK=0
+        if K==10: indK=1
+        if K==20: indK=2
+        if K==30: indK=3
 
         with open(folderFig+f"allK_results.pkl", "rb") as f:
             allRes = pickle.load(f)
@@ -446,7 +477,35 @@ def generateLatexTable(folder_base="XP/RW/"):
         with open(folderFig+f"allK_results_one_epoch.pkl", "rb") as f:
             allRes_one_epoch = pickle.load(f)
 
-        print(allRes)
+        # print(np.shape(allRes))  # axis0=val,std,sem ; axis1=K ; axis2=metric
+
+        maxVals = np.max([allRes[0]-allRes[stdsem], allRes_beta_null[0]-allRes_beta_null[stdsem], allRes_one_epoch[0]-allRes_one_epoch[stdsem]], axis=0)
+        maxVals[:, 6] = np.min([allRes[0]+allRes[stdsem], allRes_beta_null[0]+allRes_beta_null[stdsem], allRes_one_epoch[0]+allRes_one_epoch[stdsem]], axis=0)[:, 6]
+        print(np.shape(maxVals))
+
+        for resArr, resLabel in [(allRes, "\\underline{SDSBM}"), (allRes_beta_null, "NC"), (allRes_one_epoch, "MMSBM")]:
+            txt += f"\t\t& {resLabel} "
+            for metric_index, metric_label in metrics:
+                bestMetric = False
+                if resArr[0][indK, metric_index]>maxVals[indK, metric_index] and metric_label!="NCE":
+                    bestMetric=True
+                elif resArr[0][indK, metric_index]<maxVals[indK, metric_index] and metric_label=="NCE":
+                    bestMetric=True
+
+                txt += "& "
+                if bestMetric: txt += "\\maxf{"
+                txt += "\\num{ " \
+                       f"{np.round(resArr[0][indK, metric_index], 4)} +- {np.round(resArr[stdsem][indK, metric_index], 4)}" \
+                       " } "
+                if bestMetric: txt += "}"
+                print(metric_label, resArr[0][indK, metric_index])
+            txt += "\\\\\n"
+    txt += "\t\t\\cline{1-"+f"{len(metrics)+2}"+"}\n" \
+           "\t\\end{tabular}\n" \
+           "\\end{table}\n"
+
+    with open("table-results.txt", "w+") as f:
+        f.write(txt)
 
 def alluvialPlot():
 
@@ -497,10 +556,13 @@ def alluvialPlot():
     print(weigthI)
 
     for k in range(len(p)):
-        print(k, "=======")
+        print(f"\\item Cluster {k}\n"+"\\begin{itemize}")
         for val, o in reversed(sorted(zip(list(p[k]), list(range(len(p[k])))))):
             if val>0.05:
-                print(val, ind_to_region[o])
+                print(f"\t\\item {ind_to_region[o]} ({np.round(val*100)}\%)")
+        print("\\end{itemize}")
+
+    pause()
 
     nomsClusters = ["Rome", "Italia", "Illyria, Hispania, Gauls", "Eastern Europe", "Germany, Asia"]
 
@@ -675,9 +737,13 @@ def IllustrationMethod(folder = "XP/Synth/Nepochs/"):
 alluvialPlot()
 pause()
 
+XP3()
+sys.exit()
 
 generateLatexTable()
+sys.exit()
 pause()
+
 
 IllustrationMethod()
 pause()
