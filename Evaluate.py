@@ -418,6 +418,8 @@ def generateLatexTable(folder_base="XP/RW/"):
     listDs = [
         ("epigraphy", 20),
         # ("epigraphy_alt", 20),
+        # ("lastfm", 30),
+        # ("lastfm_alt", 30),
         # ("wikipedia", 30),
         # ("wikipedia_alt", 30),
         # ("reddit", 20),
@@ -505,11 +507,12 @@ def alluvialPlot():
     c_items = []
     c_links = []
     groups = []
-    opacity = 0.6
+    opacity = 0.7
     opacity_nodes = 0.9
     thresPlot = 400
     colors = ["orange","y", 'navy', "darkgreen", "darkred", ]
-    colors = ["orange","yellow", 'b', "g", "red", ]
+    colors = ["yellow", "purple",'b', "g", "red", ]
+    colors = ["#813405", "#D45113",'#F9A03F', "#F8DDA4", "#DDF9C1", ]
 
     c_clus = ["rgba"+str(to_rgba("lightgray", opacity_nodes)) for k in range(K)]
     print(c_clus)
@@ -531,7 +534,7 @@ def alluvialPlot():
         groups.append(k)
 
 
-    labels = [ind_to_title[i].replace("_", " ").capitalize() for i in range(len(theta[0]))]+[fr"{nomsClusters[k]} · year {tmin}" for k in range(K)]
+    labels = [ind_to_title[i].replace("_", " ").capitalize() for i in range(len(theta[0]))]+[fr" {nomsClusters[k]}" for k in range(K)]
     color_nodes = [c_items[i] for i in range(len(theta[0]))]+[c_clus[k] for k in range(K)]
     print(labels)
     source, target, value = [], [], []
@@ -550,7 +553,8 @@ def alluvialPlot():
     for t in range(1, len(theta)):
         if t%100!=0:
             continue
-        labels += [fr"{nomsClusters[k]} · year {tmin+t}" for k in range(K)]
+
+        labels += [f"{nomsClusters[k]}"+" "*indt for k in range(K)]
         color_nodes += [c_clus[k] for k in range(K)]
         trans = np.zeros((K,K))
         for i in range(I):
@@ -610,8 +614,8 @@ def alluvialPlot():
             color = color,
         ))])
 
-    fig.update_layout(title_text="Status geographic evolution from latin graves (100BC - 500AC)", font_size=13, font_family="Serif", font_color="black")
-    fig.write_image("Plots/RW/Status.pdf", height=1080, width=1920, scale=2)
+    fig.update_layout(title_text="Status geographic evolution from latin graves (100BC - 500AC)", font_size=18, font_family="Serif", font_color="black")
+    fig.write_image("Plots/RW/Status.pdf", height=800, width=1920, scale=2)
     #fig.show()
 
 def IllustrationMethod(folder = "XP/Synth/Nepochs/"):
@@ -668,6 +672,10 @@ def IllustrationMethod(folder = "XP/Synth/Nepochs/"):
 
 
 
+alluvialPlot()
+pause()
+
+
 generateLatexTable()
 pause()
 
@@ -688,5 +696,3 @@ pause()
 
 
 
-
-alluvialPlot()
