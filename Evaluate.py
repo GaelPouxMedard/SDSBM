@@ -329,13 +329,13 @@ def XP4_allK(folder_base="XP/RW/", ds=None):
 
     if ds is None:
         listDs = [
-                    "epigraphy_alt",
-                    "lastfm",
+                    #"epigraphy_alt",
+                    #"lastfm",
                     "lastfm_alt",
                     "wikipedia",
-                    "wikipedia_alt",
+                    #"wikipedia_alt",
                     "reddit",
-                    "reddit_alt",
+                    #"reddit_alt",
                     "epigraphy",
                   ]
     else:
@@ -360,7 +360,31 @@ def XP4_allK(folder_base="XP/RW/", ds=None):
         tabSem, tabSem_beta_null, tabSem_one_epoch = [], [], []
         codeSaveFig = f"_"
         for K in [5, 10, 20, 30]:
-            fitted_params = getParams(folder, codeSave+f"{K}_", folds)
+            if "lastfm_alt" in ds and K!=20: continue
+            if "wikipedia" in ds and K!=30: continue
+            if "epigr" in ds and K!=20: continue
+            if "redd" in ds and K!=20: continue
+            try:
+                fitted_params = getParams(folder, codeSave+f"{K}_", folds)
+            except:
+                continue
+            tabvars = []
+            tabstd = []
+            for fold in range(folds):
+                theta, p, beta = fitted_params[fold]
+                for t in range(len(theta)-10):
+                    var = np.mean(np.abs(theta[t+10]-theta[t]))
+                    std = np.std(np.abs(theta[t+10]-theta[t]))
+                    #print(var)
+                    tabvars.append(var)
+                    tabstd.append(std)
+            print(ds, K, np.mean(tabvars), np.mean(tabstd))
+            continue
+        continue
+    return
+    if True:
+        if True:
+
             fitted_params_beta_null = getParams(folder, codeSave+f"{K}_"+"beta_null_", folds)
             fitted_params_one_epoch = getParams(folder, codeSave+f"{K}_"+"one_epoch_", folds)
 
@@ -734,19 +758,6 @@ def IllustrationMethod(folder = "XP/Synth/Nepochs/"):
 
 
 
-alluvialPlot()
-pause()
-
-XP3()
-sys.exit()
-
-generateLatexTable()
-sys.exit()
-pause()
-
-
-IllustrationMethod()
-pause()
 
 XP = input("What to evaluate > ")
 if XP=="123":
@@ -762,3 +773,20 @@ pause()
 
 
 
+
+XP4_allK(ds=None)
+pause()
+
+alluvialPlot()
+pause()
+
+XP3()
+sys.exit()
+
+generateLatexTable()
+sys.exit()
+pause()
+
+
+IllustrationMethod()
+pause()

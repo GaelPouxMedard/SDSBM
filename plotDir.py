@@ -79,7 +79,7 @@ if __name__ == '__main__':
     corners = np.array([[0, 0], [1, 0], [0.5, 0.75 ** 0.5]])
     plot_dirichlet = PlotDirichlet(corners)
 
-    f, axes = plt.subplots(1, 3, figsize=(14, 4))
+    f, axes = plt.subplots(2, 2, figsize=(9, 9))
 
     tetPrec = [[0.6, 0.2, 0.2]+(np.random.random((3))-0.5)/3,
                [0.6, 0.2, 0.2]+(np.random.random((3))-0.5)/3,
@@ -93,9 +93,9 @@ if __name__ == '__main__':
     X = tetPrec.dot(plot_dirichlet._corners)
     tetMean = np.mean(tetPrec, axis=0)
 
-    ax = axes[0]
+    ax = axes[0][0]
 
-    beta = 0.5
+    beta = 0.1
     tetMean = np.array(tetMean)
     tetMean = tetMean/np.sum(tetMean)
     label = r"$\langle \theta \rangle$ = "+f"{np.round(tetMean, 2)} - "+r"$\beta$ = "+str(beta)
@@ -106,9 +106,9 @@ if __name__ == '__main__':
     ax.triplot(plot_dirichlet._triangle, linewidth=2, color="k")
 
 
-    ax = axes[1]
+    ax = axes[0][1]
 
-    beta = 2.
+    beta = 1.
     tetMean = np.array(tetMean)
     tetMean = tetMean/np.sum(tetMean)
     label = r"$\langle \theta \rangle$ = "+f"{np.round(tetMean, 2)} - "+r"$\beta$ = "+str(beta)
@@ -118,8 +118,19 @@ if __name__ == '__main__':
     ax.plot(X[:, 0], X[:, 1], "wo", markeredgecolor="k", markeredgewidth=1)
     ax.triplot(plot_dirichlet._triangle, linewidth=2, color="k")
 
-    ax = axes[2]
-    beta = 20.
+    ax = axes[1][0]
+    beta = 10.
+
+    label = r"$\langle \theta \rangle$ = "+f"{np.round(tetMean, 2)} - "+r"$\beta$ = "+str(beta)
+    alpha = 1+np.array(tetMean)*beta
+    dist = Dirichlet(alpha)
+    ax = plot_dirichlet.draw_pdf_contours(ax, dist, label)
+    ax.plot(X[:, 0], X[:, 1], "wo", markeredgecolor="k", markeredgewidth=1)
+    ax.triplot(plot_dirichlet._triangle, linewidth=2, color="k")
+
+
+    ax = axes[1][1]
+    beta = 100.
 
     label = r"$\langle \theta \rangle$ = "+f"{np.round(tetMean, 2)} - "+r"$\beta$ = "+str(beta)
     alpha = 1+np.array(tetMean)*beta

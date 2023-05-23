@@ -187,19 +187,49 @@ def likelihood(alpha_tr, alphannz, theta, p, indt_to_time, beta, Nepochs, Nobs_e
     return L, L+value_prior
 
 def maximizationTheta(obs, alphadivided, thetaPrev, p, indt_to_time, K, beta, alpha_tr, Nepochs, Nobs_epoch):
-    theta = np.tensordot(alphadivided, p.T, axes=1)*thetaPrev
-
     vecPrior = log_prior(alpha_tr, thetaPrev, indt_to_time, beta, Nepochs, Nobs_epoch)
 
+    theta = np.tensordot(alphadivided, p.T, axes=1)*thetaPrev
     theta += vecPrior
-
     norm = theta.sum(axis=-1)
     nnz = norm.nonzero()
     theta[nnz] /= norm[nnz[0], nnz[1], None]
 
     # Equivalent but slower
+    # theta2 = np.tensordot(alphadivided, p.T, axes=1)*thetaPrev
+    # theta2 += vecPrior
     # phi = alpha_tr.sum(-1) + vecPrior.sum(-1)
-    # theta /= phi[:, :, None]
+    # phi[phi==0]=1e-20
+    # theta2 /= phi[:, :, None]
+    # assert not np.any(np.abs(theta-theta2)>1e-10)
+
+    # Equivalent but MUCH slower
+    # (T, I, K) = np.shape(theta)
+    # (K, O) = np.shape(p)
+    # omega = np.zeros((T, I, K, O))
+    # for t in range(T):
+    #     for i in range(I):
+    #         for k in range(K):
+    #             for o in range(O):
+    #                 omega[t, i, k, o] += thetaPrev[t, i, k]*p[k, o]/(np.sum([thetaPrev[t, i, x]*p[x, o] for x in range(K)])+1e-20)
+    #
+    # theta3 = np.zeros((T, I, K))
+    # for t in range(T):
+    #     for i in range(I):
+    #         for k in range(K):
+    #             for o in range(O):
+    #                 theta3[t, i, k] += alpha_tr[t, i, o]*omega[t, i, k, o]
+    # theta3 += vecPrior
+    #
+    # N = np.zeros((T, I, K))
+    # for t in range(T):
+    #     for i in range(I):
+    #         for k in range(K):
+    #             for o in range(O):
+    #                 N[t, i, k] += alpha_tr[t, i, o]
+    # N[N==0]=1e-20
+    # theta3 = theta3/(N+beta)
+    # assert not np.any(np.abs(theta-theta3)>1e-10)
 
     return theta
 
@@ -467,8 +497,8 @@ def XP4(folder="XP/RW/", ds="lastfm"):
         print(f"K={K} - {np.round((time.time()-tic)/(3600), 2)}h elapsed =====================================")
 
 
-XP = int(input("Which XP > "))
-#XP = 4
+#XP = int(input("Which XP > "))
+XP = 1
 
 if XP==1:
     XP1()
